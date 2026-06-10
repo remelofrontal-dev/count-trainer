@@ -4,8 +4,8 @@ slug: 20260610-150000_count-trainer-phase-0
 project: count-trainer
 effort: E3
 effort_source: classifier
-phase: build
-progress: 0/45
+phase: verify
+progress: 45/45
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
 updated: 2026-06-10T15:00:00-07:00
@@ -48,69 +48,69 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 ## Criteria
 
 ### Scaffold & repo
-- [ ] ISC-1: `git -C count-trainer log --oneline` shows ≥1 commit
-- [ ] ISC-2: `package.json` declares expo, react, react-native, typescript; name is "count-trainer"
-- [ ] ISC-3: `tsconfig.json` has `"strict": true`
-- [ ] ISC-4: `App.tsx` exists and imports theme from `src/theme`
-- [ ] ISC-5: `app.json` sets app background / splash to Felt #0C1512 and userInterfaceStyle dark
-- [ ] ISC-6: `eas.json` defines development, preview, and production build profiles
-- [ ] ISC-7: `.github/workflows/ci.yml` runs engine tests with bun on push
+- [x] ISC-1: `git -C count-trainer log --oneline` shows ≥1 commit
+- [x] ISC-2: `package.json` declares expo, react, react-native, typescript; name is "count-trainer"
+- [x] ISC-3: `tsconfig.json` has `"strict": true`
+- [x] ISC-4: `App.tsx` exists and imports theme from `src/theme`
+- [x] ISC-5: `app.json` sets app background / splash to Felt #0C1512 and userInterfaceStyle dark
+- [x] ISC-6: `eas.json` defines development, preview, and production build profiles
+- [x] ISC-7: `.github/workflows/ci.yml` runs engine tests with bun on push
 
 ### Theme (design tokens §4.2)
-- [ ] ISC-8: `src/theme/tokens.ts` contains all 8 exact hex values (#0C1512, #141F1A, #F2EDE2, #3DDC84, #C9A85C, #C8453A, #26352D, #6E8278) — grep count = 8
-- [ ] ISC-9: Theme exposes emerald only via semantic keys (progress/win) — no generic `emerald` export on the public theme object
-- [ ] ISC-10: Typography tokens name "Big Shoulders Display" (display) and "Outfit" (body)
-- [ ] ISC-11: A unit test fails if raw `#3DDC84` appears in `src/` outside the tokens file (enforcement test exists and passes)
+- [x] ISC-8: `src/theme/tokens.ts` contains all 8 exact hex values (#0C1512, #141F1A, #F2EDE2, #3DDC84, #C9A85C, #C8453A, #26352D, #6E8278) — grep count = 8
+- [x] ISC-9: Theme exposes emerald only via semantic keys (progress/win) — no generic `emerald` export on the public theme object
+- [x] ISC-10: Typography tokens name "Big Shoulders Display" (display) and "Outfit" (body)
+- [x] ISC-11: A unit test fails if raw `#3DDC84` appears in `src/` outside the tokens file (enforcement test exists and passes)
 
 ### Engine — deck & shoe
-- [ ] ISC-12: `buildDeck()` returns exactly 52 cards
-- [ ] ISC-13: Deck contains 13 ranks × 4 suits with zero duplicates
-- [ ] ISC-14: `buildShoe(n)` returns 52×n cards for n=1,2,6,8
-- [ ] ISC-15: Seeded shuffle is deterministic — same seed produces identical order twice
-- [ ] ISC-16: Different seeds produce different orders
-- [ ] ISC-17: `Shoe.draw()` decrements remaining; drawing from an empty shoe throws
-- [ ] ISC-18: Cut card at penetration 0.75 — `cutCardReached` is false before 75% drawn, true after
-- [ ] ISC-19: `decksRemaining` returns fractional decks (e.g., 26 cards → 0.5)
+- [x] ISC-12: `buildDeck()` returns exactly 52 cards
+- [x] ISC-13: Deck contains 13 ranks × 4 suits with zero duplicates
+- [x] ISC-14: `buildShoe(n)` returns 52×n cards for n=1,2,6,8
+- [x] ISC-15: Seeded shuffle is deterministic — same seed produces identical order twice
+- [x] ISC-16: Different seeds produce different orders
+- [x] ISC-17: `Shoe.draw()` decrements remaining; drawing from an empty shoe throws
+- [x] ISC-18: Cut card at penetration 0.75 — `cutCardReached` is false before 75% drawn, true after
+- [x] ISC-19: `decksRemaining` returns fractional decks (e.g., 26 cards → 0.5)
 
 ### Engine — Hi-Lo count
-- [ ] ISC-20: Hi-Lo value is +1 for each of 2,3,4,5,6
-- [ ] ISC-21: Hi-Lo value is 0 for each of 7,8,9
-- [ ] ISC-22: Hi-Lo value is −1 for each of 10,J,Q,K,A
-- [ ] ISC-23: Running count over any full deck/shoe sums to 0 (balanced system, tested at 1 and 6 decks)
+- [x] ISC-20: Hi-Lo value is +1 for each of 2,3,4,5,6
+- [x] ISC-21: Hi-Lo value is 0 for each of 7,8,9
+- [x] ISC-22: Hi-Lo value is −1 for each of 10,J,Q,K,A
+- [x] ISC-23: Running count over any full deck/shoe sums to 0 (balanced system, tested at 1 and 6 decks)
 
 ### Engine — true count
-- [ ] ISC-24: True count = RC ÷ decksRemaining (RC +6, 3 decks → +2.0 exact)
-- [ ] ISC-25: Floored true count truncates toward zero (+5/2 → +2, −5/2 → −2), convention documented in source
-- [ ] ISC-26: Sub-one-deck division works (RC +2, 26 cards → +4.0)
-- [ ] ISC-27: True count with 0 cards remaining throws (guarded division by zero)
+- [x] ISC-24: True count = RC ÷ decksRemaining (RC +6, 3 decks → +2.0 exact)
+- [x] ISC-25: Floored true count truncates toward zero (+5/2 → +2, −5/2 → −2), convention documented in source
+- [x] ISC-26: Sub-one-deck division works (RC +2, 26 cards → +4.0)
+- [x] ISC-27: True count with 0 cards remaining throws (guarded division by zero)
 
 ### Engine — hand math
-- [ ] ISC-28: Hard totals correct (10+9=19); soft totals correct (A+6 = 17, isSoft=true)
-- [ ] ISC-29: Multi-ace hands: A+A = soft 12; A+A+9 = soft 21; A+6+10 = hard 17 (ace demotion)
-- [ ] ISC-30: Blackjack = exactly two cards A+ten-value; 21 in 3+ cards is NOT blackjack
-- [ ] ISC-31: Pair detection by rank; bust detection at >21
+- [x] ISC-28: Hard totals correct (10+9=19); soft totals correct (A+6 = 17, isSoft=true)
+- [x] ISC-29: Multi-ace hands: A+A = soft 12; A+A+9 = soft 21; A+6+10 = hard 17 (ace demotion)
+- [x] ISC-30: Blackjack = exactly two cards A+ten-value; 21 in 3+ cards is NOT blackjack
+- [x] ISC-31: Pair detection by rank; bust detection at >21
 
 ### Engine — basic strategy (H17 + S17)
-- [ ] ISC-32: Every (player hand, dealer upcard) combination returns a defined action for both H17 and S17 — exhaustive loop test, no undefined cells
-- [ ] ISC-33: H17/S17 divergence is exactly the documented cell set (11 vs A, soft 18 vs 2, soft 19 vs 6, surrender cells) — diff-enumeration test
-- [ ] ISC-34: Hard-total spot checks: 12 vs 2→Hit, 12 vs 4→Stand, 16 vs 10→Surrender-else-Hit, 9 vs 3→Double, 11 vs 6→Double
-- [ ] ISC-35: Soft-total spot checks: A7 vs 9→Hit, A7 vs 3→Double-else-Stand, A8 vs 6→Stand(S17)/Double-else-Stand(H17)
-- [ ] ISC-36: Pair spot checks: 8,8 always split; A,A always split; 10,10 never split; 9,9 stands vs 7/10/A and splits vs 2–6,8,9; 5,5 never splits (plays as hard 10)
+- [x] ISC-32: Every (player hand, dealer upcard) combination returns a defined action for both H17 and S17 — exhaustive loop test, no undefined cells
+- [x] ISC-33: H17/S17 divergence is exactly the documented cell set (11 vs A, soft 18 vs 2, soft 19 vs 6, surrender cells) — diff-enumeration test
+- [x] ISC-34: Hard-total spot checks: 12 vs 2→Hit, 12 vs 4→Stand, 16 vs 10→Surrender-else-Hit, 9 vs 3→Double, 11 vs 6→Double
+- [x] ISC-35: Soft-total spot checks: A7 vs 9→Hit, A7 vs 3→Double-else-Stand, A8 vs 6→Stand(S17)/Double-else-Stand(H17)
+- [x] ISC-36: Pair spot checks: 8,8 always split; A,A always split; 10,10 never split; 9,9 stands vs 7/10/A and splits vs 2–6,8,9; 5,5 never splits (plays as hard 10)
 
 ### Engine — scoring
-- [ ] ISC-37: Accuracy = correct/total, returns 0 on zero attempts (no NaN); speed score is monotonic in ms-per-card and bounded 0–100
-- [ ] ISC-38: Casino Ready v1 composite (speed+accuracy) bounded 0–100; peek penalty subtracts 5 points and floors at 0
+- [x] ISC-37: Accuracy = correct/total, returns 0 on zero attempts (no NaN); speed score is monotonic in ms-per-card and bounded 0–100
+- [x] ISC-38: Casino Ready v1 composite (speed+accuracy) bounded 0–100; peek penalty subtracts 5 points and floors at 0
 
 ### Quality gates
-- [ ] ISC-39: `bun test` exits 0 with zero failures
-- [ ] ISC-40: `bun test --coverage` reports 100% line coverage for every file under `src/engine/`
-- [ ] ISC-41: Engine purity — no file in `src/engine/` imports react/react-native/expo (grep returns nothing)
+- [x] ISC-39: `bun test` exits 0 with zero failures
+- [x] ISC-40: `bun test --coverage` reports 100% line coverage for every file under `src/engine/`
+- [x] ISC-41: Engine purity — no file in `src/engine/` imports react/react-native/expo (grep returns nothing)
 
 ### Anti-criteria
-- [ ] ISC-42: Anti: "stripe" appears nowhere in package.json or source
-- [ ] ISC-43: Anti: raw #3DDC84 appears nowhere in src/ outside src/theme/tokens.ts
-- [ ] ISC-44: Anti: no package-lock.json or yarn.lock (bun-only repo)
-- [ ] ISC-45: Anti: no .py files anywhere in the repo
+- [x] ISC-42: Anti: "stripe" appears nowhere in package.json or source
+- [x] ISC-43: Anti: raw #3DDC84 appears nowhere in src/ outside src/theme/tokens.ts
+- [x] ISC-44: Anti: no package-lock.json or yarn.lock (bun-only repo)
+- [x] ISC-45: Anti: no .py files anywhere in the repo
 
 ## Test Strategy
 
@@ -151,3 +151,43 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - 2026-06-10: Scaffold is hand-authored (package.json + configs) rather than `bunx create-expo-app` — deterministic, no multi-minute dependency install needed since Phase 0 acceptance runs entirely on the dependency-free engine via bun test. `bun install` deferred to Phase 1 when UI work begins.
 - 2026-06-10: show-your-math (delegation floor): Explore/second delegate skipped — all file targets are known and newly authored; nothing to search. Forge covers the E3 coding-task binding as adversarial reviewer of the correctness-critical strategy tables.
 - 2026-06-10: EnterPlanMode skipped despite E3: user explicitly instructed "start Phase 0" against an approved written plan (the brief §4.4); session is autonomous — blocking on plan approval would contradict the directive.
+- 2026-06-10: Advisor (Rule 2) UNAVAILABLE — `Inference.ts` exits 1 on advisor and fast modes (same infra failure as the session's mode classifier, which fell back to fail-safe). Three invocation attempts made; degradation logged per Rule 3 rather than silently skipped. Forge cross-vendor review stands in as the commitment-boundary second opinion.
+- 2026-06-10: Forge (GPT-5.4) spawned in background for adversarial review of the strategy tables — the single biggest transcription-error surface (290 cells × 2 rulesets); verdict gates VERIFY completion.
+
+- 2026-06-10: Forge verdict PASS, 0 critical. Caveat honestly noted: codex CLI absent on this machine, so Forge ran as direct static analysis + numeric probes rather than the GPT-5.4 production path — review quality high (all 290×2 cells checked against canonical chart) but not literally cross-vendor this run. MINOR finding queued for Phase 1: add a frozen golden-chart fixture asserting every strategy cell against an independently transcribed external chart, so a systematic transcription error can't hide in self-referential tests.
+
+## Changelog
+
+- **conjectured:** exhaustive-coverage + diff-set + spot-check tests were sufficient to verify strategy-table correctness.
+  **refuted by:** Forge review (2026-06-10) — the harness is self-referential; a systematic error duplicated in table and spot-checks would pass undetected.
+  **learned:** internal consistency ≠ external correctness for transcribed reference data; correctness-critical lookup tables need an independently sourced golden fixture.
+  **criterion now:** ISC-33's diff-set test plus Forge's external cell-by-cell verification stand for Phase 0; Phase 1 adds a golden-chart fixture ISC asserting all 370 cells against an independent transcription.
+
+## Verification
+
+- ISC-1: Bash — `git log --oneline` → `637fd51 Phase 0: Expo+TS scaffold...` (1 commit)
+- ISC-2: Grep — package.json matches expo/react-native/typescript/count-trainer (4/4)
+- ISC-3: Grep — tsconfig.json contains `"strict": true`
+- ISC-4: Grep — App.tsx contains `import { theme } from './src/theme'`
+- ISC-5: Grep — app.json: 4 matches for #0C1512 + userInterfaceStyle dark
+- ISC-6: Grep — eas.json: 6 matches across development/preview/production profiles
+- ISC-7: Grep — ci.yml contains `run: bun test --coverage` on push/PR via oven-sh/setup-bun
+- ISC-8: Grep — tokens.ts contains all 8 brief hexes (9 matches incl. doc comment)
+- ISC-9: bun test — "emerald reachable ONLY through semantic progress/win keys" PASS
+- ISC-10: Grep + bun test — "Big Shoulders Display" and "Outfit" present, typography test PASS
+- ISC-11: bun test — enforcement test "raw emerald hex nowhere in src/ outside tokens.ts" PASS
+- ISC-12..19: bun test — deck.test.ts all PASS (52 cards, no dupes, 52×n, seeded determinism, draw/empty-throw, cut card at 234/312, decksRemaining 0.5)
+- ISC-20..23: bun test — counting.test.ts PASS (per-rank tags, full-deck and 6-deck RC=0 incl. shuffled)
+- ISC-24..27: bun test — TC exact (6/3=2), trunc-toward-zero (±5/2=±2), sub-deck (2/0.5=4), 0-decks throws
+- ISC-28..31: bun test — hand.test.ts PASS (soft 17, multi-ace promotion/demotion, BJ 2-cards-only, pair-by-rank, bust)
+- ISC-32: bun test — exhaustive loops: 18 hard ×10, 9 soft ×10, 10 pair ×10 cells + 13×13×13 two-card routing, both rulesets, 0 undefined
+- ISC-33: bun test — H17/S17 diff-enumeration equals exactly {hard 11vA, 15vA, 17vA, soft 18v2, 19v6, pair 8vA}
+- ISC-34..36: bun test — all spot-check cells PASS (12v2 H, 12v4 S, 16vT Rh, 9v3 D, 11v6 D, A7/A8 cells, pair rules, no-DAS adjustments)
+- ISC-37..38: bun test — scoring PASS (no NaN, monotonic bounded speed, 60/40 composite, peek −5 floor 0)
+- ISC-39: Bash — `bun test`: 62 pass, 0 fail, 5715 expect() calls, exit 0
+- ISC-40: Bash — `bun test --coverage`: 100.00% Funcs / 100.00% Lines on every src/engine/* file
+- ISC-41: Grep + bun test — 0 react/react-native/expo imports in src/engine/
+- ISC-42: Grep — "stripe" 0 matches in package.json + src + App.tsx
+- ISC-43: Grep — #3DDC84 outside tokens.ts: 0 files
+- ISC-44: Bash — no package-lock.json / yarn.lock present
+- ISC-45: Bash — `find . -name "*.py"`: 0 files
