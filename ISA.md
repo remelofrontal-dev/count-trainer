@@ -4,11 +4,11 @@ slug: 20260610-193000_count-trainer-phase-1
 project: count-trainer
 effort: E3
 effort_source: classifier
-phase: build
-progress: 45/69
+phase: verify
+progress: 68/69
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
-updated: 2026-06-10T15:35:00-07:00
+updated: 2026-06-10T19:50:00-07:00
 ---
 
 # ISA — Count Trainer (Phase 0: Foundation)
@@ -107,33 +107,33 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - [x] ISC-41: Engine purity — no file in `src/engine/` imports react/react-native/expo (grep returns nothing)
 
 ### Phase 1 — domain logic (pure TS, tested)
-- [ ] ISC-46: Level definitions exist for L1 Card Values, L2 Running Count (slow), L3 Running Count (speed), each with gate thresholds (≥95% accuracy + per-level max ms/card)
-- [ ] ISC-47: Gate evaluation passes ONLY when session accuracy ≥95% AND avg ms/card ≤ level threshold — both boundaries unit-tested
-- [ ] ISC-48: Levels unlock strictly in sequence — L2 locked until L1 gate passed, L3 until L2; locked-level drill start is rejected
-- [ ] ISC-49: Drill session machine deals → grades → advances, recording per-card latency ms and correctness
-- [ ] ISC-50: Peek is recorded per session and applies −5 each to the session score (engine applyPeekPenalty wired)
-- [ ] ISC-51: Drill session ends at the 120s time cap (two-minute loop) — tick past cap transitions to finished
-- [ ] ISC-52: All levels grade per-card Hi-Lo tag answers (−1/0/+1) against engine tags; running-count levels additionally track the cumulative count revealed only by peek (refined 2×: zones tapping tags IS the mockup's interaction; hint labels fade at higher levels)
-- [ ] ISC-53: Streak increments on consecutive-day completion, persists same-day repeats, resets to 1 after a missed day
-- [ ] ISC-54: Streak day-rollover uses local calendar dates — midnight boundary tested with injected clock
-- [ ] ISC-55: ProgressState round-trips serialize → deserialize losslessly through the Storage interface
-- [ ] ISC-56: AsyncStorage adapter and InMemory adapter both satisfy the Storage interface; tests run on InMemory
-- [ ] ISC-57: Casino Ready score recomputes after each session as best-of-last-10-sessions composite and persists
+- [x] ISC-46: Level definitions exist for L1 Card Values, L2 Running Count (slow), L3 Running Count (speed), each with gate thresholds (≥95% accuracy + per-level max ms/card)
+- [x] ISC-47: Gate evaluation passes ONLY when session accuracy ≥95% AND avg ms/card ≤ level threshold — both boundaries unit-tested
+- [x] ISC-48: Levels unlock strictly in sequence — L2 locked until L1 gate passed, L3 until L2; locked-level drill start is rejected
+- [x] ISC-49: Drill session machine deals → grades → advances, recording per-card latency ms and correctness
+- [x] ISC-50: Peek is recorded per session and applies −5 each to the session score (engine applyPeekPenalty wired)
+- [x] ISC-51: Drill session ends at the 120s time cap (two-minute loop) — tick past cap transitions to finished
+- [x] ISC-52: All levels grade per-card Hi-Lo tag answers (−1/0/+1) against engine tags; running-count levels additionally track the cumulative count revealed only by peek (refined 2×: zones tapping tags IS the mockup's interaction; hint labels fade at higher levels)
+- [x] ISC-53: Streak increments on consecutive-day completion, persists same-day repeats, resets to 1 after a missed day
+- [x] ISC-54: Streak day-rollover uses local calendar dates — midnight boundary tested with injected clock
+- [x] ISC-55: ProgressState round-trips serialize → deserialize losslessly through the Storage interface
+- [x] ISC-56: AsyncStorage adapter and InMemory adapter both satisfy the Storage interface; tests run on InMemory
+- [x] ISC-57: Casino Ready score recomputes after each session as best-of-last-10-sessions composite and persists
 
 ### Phase 1 — UI layer
-- [ ] ISC-58: Four screens exist (Onboarding, Home, Drill, Results), all colors sourced from theme tokens
-- [ ] ISC-59: Drill screen interactive controls live in the bottom half — layout constants assert thumb-zone placement, unit-tested
-- [ ] ISC-60: Anti: no Alert/confirm dialog imports anywhere in the drill flow
-- [ ] ISC-61: Count-zone hints match engine truth: −1 zone labeled 10·J·Q·K·A (suit red), +1 zone labeled 2·3·4·5·6 (semantic emerald) — unit test derives labels FROM HI_LO tags (mockup had these inverted; engine is ground truth)
-- [ ] ISC-62: Results screen renders exactly one dominant CTA: "ONE MORE ROUND →"
-- [ ] ISC-63: Navigation reaches Drill from cold start without any auth step; account prompt appears only on/after first Results
-- [ ] ISC-64: App.tsx mounts the navigation root with all four screens registered
+- [x] ISC-58: Four screens exist (Onboarding, Home, Drill, Results), all colors sourced from theme tokens
+- [x] ISC-59: Drill screen interactive controls live in the bottom half — layout constants assert thumb-zone placement, unit-tested
+- [x] ISC-60: Anti: no Alert/confirm dialog imports anywhere in the drill flow
+- [x] ISC-61: Count-zone hints match engine truth: −1 zone labeled 10·J·Q·K·A (suit red), +1 zone labeled 2·3·4·5·6 (semantic emerald) — unit test derives labels FROM HI_LO tags (mockup had these inverted; engine is ground truth)
+- [x] ISC-62: Results screen renders exactly one dominant CTA: "ONE MORE ROUND →"
+- [x] ISC-63: Navigation reaches Drill from cold start without any auth step; account prompt appears only on/after first Results
+- [x] ISC-64: App.tsx mounts the navigation root with all four screens registered
 
 ### Phase 1 — infra & quality
-- [ ] ISC-65: `bun install` complete and `bunx tsc --noEmit` exits 0 (strict mode, whole repo)
-- [ ] ISC-66: Full suite green and engine coverage remains 100% lines+funcs
-- [ ] ISC-67: Supabase sync module is offline-first — without env credentials it queues locally and never throws; queue drain logic unit-tested with a mock client
-- [ ] ISC-68: Anti: emerald enforcement test still passes with all new UI files (no raw #3DDC84 outside tokens)
+- [x] ISC-65: `bun install` complete and `bunx tsc --noEmit` exits 0 (strict mode, whole repo)
+- [x] ISC-66: Full suite green and engine coverage remains 100% lines+funcs
+- [x] ISC-67: Supabase sync module is offline-first — without env credentials it queues locally and never throws; queue drain logic unit-tested with a mock client
+- [x] ISC-68: Anti: emerald enforcement test still passes with all new UI files (no raw #3DDC84 outside tokens)
 - [ ] ISC-69: [DEFERRED-VERIFY] Live device flow: install → counting cards → first result → streak day 2, zero crashes (follow-up: founder runs `bunx expo start` on device; tracked as Phase 1 QA task in Decisions)
 
 ### Anti-criteria
@@ -234,3 +234,24 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - ISC-43: Grep — #3DDC84 outside tokens.ts: 0 files
 - ISC-44: Bash — no package-lock.json / yarn.lock present
 - ISC-45: Bash — `find . -name "*.py"`: 0 files
+
+### Phase 1 (2026-06-10)
+- ISC-46..48: bun test — levels.test.ts PASS (defs, gate boundaries 0.95/1500 exact, sequential unlock, skip-gate rejected)
+- ISC-49..52: bun test — drill.test.ts PASS (deal/grade/latency, tag grading all modes, runningCountSoFar matches engine, peek, no-op after finish)
+- ISC-50: bun test — peek −5 lands in session score (peeked.score = clean − 10 for 2 peeks)
+- ISC-51: bun test — cap boundary: running at 119999ms, finished at 120000ms
+- ISC-53..54: bun test — streak.test.ts PASS (first/repeat/consecutive/reset; month + year boundaries; localDay midnight + zero-padding)
+- ISC-55..56: bun test — progress round-trip lossless; version guard throws; InMemory adapter full cycle; asyncStorageAdapter conformance enforced by tsc strict (KVStorage-typed)
+- ISC-57: bun test — best-of-last-10: 90 forgotten after 10×60 sessions, window length 10
+- ISC-58: Bash — all four screen files exist; ui.test asserts raw-hex-free UI (theme tokens only)
+- ISC-59: bun test — DRILL_INTERACTIVE_TOP_FRACTION=0.55 ≥ 0.5 and wired into DrillScreen
+- ISC-60: bun test — zero Alert references under src/ui
+- ISC-61: bun test — zone hints derived from HI_LO: minus="10 · J · Q · K · A", plus="2 · 3 · 4 · 5 · 6", rank-by-rank agreement loop
+- ISC-62: bun test — "ONE MORE ROUND" exactly once in ResultsScreen
+- ISC-63: bun test — store flow: onboarding → drill with no auth; promptAccount true only at first results; returning user → home
+- ISC-64: Grep — AppRoot switches all four screen cases; App.tsx mounts AppRoot
+- ISC-65: Bash — `bunx tsc --noEmit` exit 0 (strict); deps installed via bun
+- ISC-66: Bash — 119 pass / 0 fail / 5877 assertions; engine files all 100.00% Funcs+Lines
+- ISC-67: bun test — sync: null-client no-op, queue intact; success drains+clears; failure retains; env parsing null-safe
+- ISC-68: Bash — #3DDC84 outside tokens.ts: 0 files (enforcement test also green)
+- ISC-69: DEFERRED-VERIFY — requires device; follow-up: founder runs `bunx expo start`, walks install→result→streak day 2
