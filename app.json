@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Count Trainer",
+    "slug": "count-trainer",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0C1512",
+    "splash": {
+      "backgroundColor": "#0C1512",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.breakerleads.counttrainer"
+    },
+    "android": {
+      "package": "com.breakerleads.counttrainer",
+      "adaptiveIcon": {
+        "backgroundColor": "#0C1512"
+      }
+    },
+    "assetBundlePatterns": ["**/*"]
+  }
+}

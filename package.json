@@ -1,0 +1,26 @@
+{
+  "name": "count-trainer",
+  "version": "0.1.0",
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "bunx expo start",
+    "ios": "bunx expo start --ios",
+    "android": "bunx expo start --android",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "expo": "~53.0.0",
+    "expo-haptics": "~14.1.0",
+    "expo-status-bar": "~2.2.0",
+    "react": "19.0.0",
+    "react-native": "0.79.0",
+    "react-native-svg": "~15.11.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.0.0",
+    "typescript": "~5.8.0"
+  }
+}
