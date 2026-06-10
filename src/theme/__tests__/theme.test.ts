@@ -29,9 +29,9 @@ describe('design tokens (brief §4.2)', () => {
   });
 
   test('ISC-9: emerald reachable ONLY through semantic progress/win keys', () => {
-    expect(theme.semantic.progress).toBe(EMERALD);
-    expect(theme.semantic.win).toBe(EMERALD);
-    expect(theme.semantic.countPlus).toBe(EMERALD);
+    expect(theme.semantic.progress as string).toBe(EMERALD);
+    expect(theme.semantic.win as string).toBe(EMERALD);
+    expect(theme.semantic.countPlus as string).toBe(EMERALD);
     // No general color slot carries emerald, and no key is named "emerald".
     for (const [key, value] of Object.entries(theme.colors)) {
       expect(value).not.toBe(EMERALD);

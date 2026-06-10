@@ -1,11 +1,11 @@
 ---
-task: "Count Trainer Phase 0 foundation: scaffold, tokens, engine"
-slug: 20260610-150000_count-trainer-phase-0
+task: "Count Trainer Phase 1: free core MVP app layer"
+slug: 20260610-193000_count-trainer-phase-1
 project: count-trainer
 effort: E3
 effort_source: classifier
-phase: complete
-progress: 45/45
+phase: build
+progress: 45/69
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
 updated: 2026-06-10T15:35:00-07:00
@@ -106,6 +106,36 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - [x] ISC-40: `bun test --coverage` reports 100% line coverage for every file under `src/engine/`
 - [x] ISC-41: Engine purity — no file in `src/engine/` imports react/react-native/expo (grep returns nothing)
 
+### Phase 1 — domain logic (pure TS, tested)
+- [ ] ISC-46: Level definitions exist for L1 Card Values, L2 Running Count (slow), L3 Running Count (speed), each with gate thresholds (≥95% accuracy + per-level max ms/card)
+- [ ] ISC-47: Gate evaluation passes ONLY when session accuracy ≥95% AND avg ms/card ≤ level threshold — both boundaries unit-tested
+- [ ] ISC-48: Levels unlock strictly in sequence — L2 locked until L1 gate passed, L3 until L2; locked-level drill start is rejected
+- [ ] ISC-49: Drill session machine deals → grades → advances, recording per-card latency ms and correctness
+- [ ] ISC-50: Peek is recorded per session and applies −5 each to the session score (engine applyPeekPenalty wired)
+- [ ] ISC-51: Drill session ends at the 120s time cap (two-minute loop) — tick past cap transitions to finished
+- [ ] ISC-52: All levels grade per-card Hi-Lo tag answers (−1/0/+1) against engine tags; running-count levels additionally track the cumulative count revealed only by peek (refined 2×: zones tapping tags IS the mockup's interaction; hint labels fade at higher levels)
+- [ ] ISC-53: Streak increments on consecutive-day completion, persists same-day repeats, resets to 1 after a missed day
+- [ ] ISC-54: Streak day-rollover uses local calendar dates — midnight boundary tested with injected clock
+- [ ] ISC-55: ProgressState round-trips serialize → deserialize losslessly through the Storage interface
+- [ ] ISC-56: AsyncStorage adapter and InMemory adapter both satisfy the Storage interface; tests run on InMemory
+- [ ] ISC-57: Casino Ready score recomputes after each session as best-of-last-10-sessions composite and persists
+
+### Phase 1 — UI layer
+- [ ] ISC-58: Four screens exist (Onboarding, Home, Drill, Results), all colors sourced from theme tokens
+- [ ] ISC-59: Drill screen interactive controls live in the bottom half — layout constants assert thumb-zone placement, unit-tested
+- [ ] ISC-60: Anti: no Alert/confirm dialog imports anywhere in the drill flow
+- [ ] ISC-61: Count-zone hints match engine truth: −1 zone labeled 10·J·Q·K·A (suit red), +1 zone labeled 2·3·4·5·6 (semantic emerald) — unit test derives labels FROM HI_LO tags (mockup had these inverted; engine is ground truth)
+- [ ] ISC-62: Results screen renders exactly one dominant CTA: "ONE MORE ROUND →"
+- [ ] ISC-63: Navigation reaches Drill from cold start without any auth step; account prompt appears only on/after first Results
+- [ ] ISC-64: App.tsx mounts the navigation root with all four screens registered
+
+### Phase 1 — infra & quality
+- [ ] ISC-65: `bun install` complete and `bunx tsc --noEmit` exits 0 (strict mode, whole repo)
+- [ ] ISC-66: Full suite green and engine coverage remains 100% lines+funcs
+- [ ] ISC-67: Supabase sync module is offline-first — without env credentials it queues locally and never throws; queue drain logic unit-tested with a mock client
+- [ ] ISC-68: Anti: emerald enforcement test still passes with all new UI files (no raw #3DDC84 outside tokens)
+- [ ] ISC-69: [DEFERRED-VERIFY] Live device flow: install → counting cards → first result → streak day 2, zero crashes (follow-up: founder runs `bunx expo start` on device; tracked as Phase 1 QA task in Decisions)
+
 ### Anti-criteria
 - [x] ISC-42: Anti: "stripe" appears nowhere in package.json or source
 - [x] ISC-43: Anti: raw #3DDC84 appears nowhere in src/ outside src/theme/tokens.ts
@@ -142,6 +172,14 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 | engine-scoring | accuracy/speed/Casino Ready v1 | ISC-37..38 | — | yes |
 | quality-gates | full suite, coverage, purity, anti | ISC-39..42 | all engine | no |
 | forge-review | GPT-5.4 adversarial engine correctness review | ISC-33..36 | engine-strategy | yes |
+| p1-levels-gates | Level defs L1–L3 + mastery-gate logic | ISC-46..48 | engine-scoring | yes |
+| p1-drill-session | Drill state machine, grading, peek, 120s cap | ISC-49..52 | p1-levels-gates | no |
+| p1-streaks | Streak counter w/ local-date rollover | ISC-53..54 | — | yes |
+| p1-persistence | Storage interface + adapters + ProgressState | ISC-55..57 | — | yes |
+| p1-screens | Onboarding/Home/Drill/Results + nav store | ISC-58..64 | p1-drill-session, theme-tokens | no |
+| p1-sync | Offline-first Supabase scaffold + queue | ISC-67 | p1-persistence | yes |
+| p1-quality | typecheck, suite, coverage, enforcement | ISC-65..66, 68 | all p1 | no |
+| p1-forge-review | Adversarial review of gate/streak/drill logic | ISC-47, 53, 49 | p1-quality | yes |
 
 ## Decisions
 
@@ -155,6 +193,11 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - 2026-06-10: Forge (GPT-5.4) spawned in background for adversarial review of the strategy tables — the single biggest transcription-error surface (290 cells × 2 rulesets); verdict gates VERIFY completion.
 
 - 2026-06-10: Forge verdict PASS, 0 critical. Caveat honestly noted: codex CLI absent on this machine, so Forge ran as direct static analysis + numeric probes rather than the GPT-5.4 production path — review quality high (all 290×2 cells checked against canonical chart) but not literally cross-vendor this run. MINOR finding queued for Phase 1: add a frozen golden-chart fixture asserting every strategy cell against an independently transcribed external chart, so a systematic transcription error can't hide in self-referential tests.
+
+- 2026-06-10 (Phase 1): Mockup drill screen has INVERTED Hi-Lo hint labels (−1 zone shows "2·3·4·5·6… wait, no", +1 shows "10·J·Q·K·A") with an editor's note left in at 18:34. Engine HI_LO tags are ground truth: 2–6→+1 (emerald), 10/J/Q/K/A→−1 (red). ISC-61 derives UI labels from engine tags so the visual spec can never teach a wrong count.
+- 2026-06-10 (Phase 1): Navigation is a Zustand-driven screen switch (no react-navigation/expo-router yet) — zero extra native deps, fully unit-testable, sufficient for a 4-screen MVP. Revisit at Phase 3 when challenge-a-friend deep links require real routing.
+- 2026-06-10 (Phase 1): Supabase auth+sync ships as offline-first scaffold behind env placeholders (no project credentials exist yet). Queue-and-drain sync is unit-tested against a mock; live sync is DEFERRED-VERIFY (ISC-69 companion). Founder action: create Supabase project, fill .env.
+- 2026-06-10 (Phase 1): show-your-math (delegation floor 1/2): app layer is single-author greenfield over a verified engine — no search targets, no parallel write surfaces. Forge covers the E3 coding binding as adversarial reviewer of gate/streak/drill logic.
 
 ## Changelog
 
