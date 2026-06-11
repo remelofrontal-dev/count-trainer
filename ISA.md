@@ -5,10 +5,10 @@ project: count-trainer
 effort: E3
 effort_source: classifier
 phase: build
-progress: 108/112
+progress: 110/112
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
-updated: 2026-06-11T11:25:00-07:00
+updated: 2026-06-11T12:30:00-07:00
 live_url: https://remelofrontal-dev.github.io/count-trainer/
 ---
 
@@ -165,7 +165,7 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - [x] ISC-102: Dealer H17/S17 rules; dealer stands pat when all players bust — unit-tested
 **Pending (next increments):**
 - [x] ISC-103: Drill engine generalized to 4 question kinds (card-tag/running-count/strategy/true-count); answers normalized to strings; verified live (Basic Strategy drill renders + grades)
-- [ ] ISC-104: Level 0 Blackjack Basics — show-then-do micro-lessons (beginner on-ramp)
+- [x] ISC-104: Level 0 Blackjack Basics — 6 show-then-do lessons, beginner placement routes here, replayable from path. Verified live.
 - [x] ISC-105 (partial): Basic Strategy (FREE, graded vs book play) + True Count (PREMIUM, graded vs floored TC) drills shipped with PRO tags + written premium boundary. [Deck Est / Deviations / Bet Spreads / Full Table still pending]
 - [x] ISC-106: Play mode UI — felt table (dealer+seats), Hit/Stand/Double/Split, Coach ON/OFF overlay (live RC+TC+book play), seat config (heads-up↔multi, PRO-tagged), 3:2↔6:5 toggle, W/L/P+chips header, count carries across rounds. Verified live via CDP (deal→coach RC−1→act→settle, 0 errors). [deal-speed selector + count-quiz fold into ISC-108]
 - [ ] ISC-107: Table Rules presets + Table Quality A–F grade + "why counters walk past 6:5" lesson
