@@ -8,7 +8,9 @@ export function OnboardingScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.eyebrow}>COUNT TRAINER</Text>
-      <Text style={styles.title}>ZERO TO{'\n'}CASINO READY.</Text>
+      <Text style={styles.title} adjustsFontSizeToFit numberOfLines={2}>
+        ZERO TO{'\n'}CASINO READY.
+      </Text>
       <Text style={styles.sub}>
         One guided path. Master card counting the way you'd learn a language — one gate at a time.
       </Text>
@@ -44,9 +46,9 @@ const styles = StyleSheet.create({
   title: {
     color: theme.colors.text,
     fontFamily: theme.typography.display,
-    fontSize: 52,
+    fontSize: 46,
     fontWeight: '800',
-    lineHeight: 52,
+    lineHeight: 48,
   },
   sub: {
     color: theme.colors.textSecondary,

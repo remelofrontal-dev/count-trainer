@@ -20,6 +20,18 @@
         "backgroundColor": "#0C1512"
       }
     },
-    "assetBundlePatterns": ["**/*"]
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "backgroundColor": "#0C1512",
+      "themeColor": "#0C1512",
+      "name": "Count Trainer",
+      "shortName": "Count Trainer",
+      "description": "Educational card-counting trainer. Zero to casino-ready through one guided path."
+    },
+    "assetBundlePatterns": ["**/*"],
+    "experiments": {
+      "baseUrl": "/count-trainer"
+    }
   }
 }
