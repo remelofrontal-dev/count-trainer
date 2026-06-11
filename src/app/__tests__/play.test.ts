@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import { EMPTY_RECORD, foldRecord, liveRunningCount, liveTrueCount } from '../play';
+import {
+  EMPTY_RECORD,
+  MAX_AI_SEATS,
+  foldRecord,
+  liveRunningCount,
+  liveTrueCount,
+  nextSeatConfig,
+  seatLabel,
+} from '../play';
 import { type AppDeps, createAppStore } from '../store';
 import { localOnlyRegistry } from '../identity';
 import { InMemoryStorage } from '../storage';
@@ -18,6 +26,32 @@ function makeDeps(over: Partial<AppDeps> = {}): AppDeps {
     ...over,
   };
 }
+
+describe('seat toggle (total seats including the player)', () => {
+  test('cycles AI seats 0→1→2→3→4→5→0 (Heads-up through 6 total)', () => {
+    const seq: number[] = [];
+    let n = 0;
+    for (let i = 0; i < 7; i++) {
+      seq.push(n);
+      n = nextSeatConfig(n);
+    }
+    expect(seq).toEqual([0, 1, 2, 3, 4, 5, 0]); // wraps after 6 total seats
+    expect(MAX_AI_SEATS).toBe(5);
+  });
+
+  test('labels show TOTAL seats incl. the player', () => {
+    expect(seatLabel(0)).toBe('Heads-up'); // just you vs the dealer
+    expect(seatLabel(1)).toBe('2 seats'); // you + 1 AI
+    expect(seatLabel(2)).toBe('3 seats');
+    expect(seatLabel(5)).toBe('6 seats'); // you + 5 AI = full table
+  });
+
+  test('AI-seat count is always one less than the labeled total', () => {
+    for (let ai = 1; ai <= MAX_AI_SEATS; ai++) {
+      expect(seatLabel(ai)).toBe(`${ai + 1} seats`);
+    }
+  });
+});
 
 describe('play helpers', () => {
   test('foldRecord tallies the human seat W/L/P + chips', () => {

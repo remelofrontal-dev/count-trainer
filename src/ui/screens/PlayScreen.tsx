@@ -10,7 +10,7 @@ import {
 import type { Card } from '../../engine/types';
 import { handValue } from '../../engine/hand';
 import { basicStrategyAction, resolveAction } from '../../engine/basicStrategy';
-import { liveRunningCount, liveTrueCount } from '../../app/play';
+import { liveRunningCount, liveTrueCount, nextSeatConfig, seatLabel } from '../../app/play';
 import { effectivePremium, showProTag } from '../../app/entitlement';
 import { theme } from '../../theme';
 import { useApp } from '../appStore';
@@ -117,9 +117,9 @@ export function PlayScreen() {
         <View style={styles.configRow}>
           <Toggle label={`Coach ${coach ? 'ON' : 'OFF'}`} on={coach} onPress={togglePlayCoach} />
           <Toggle
-            label={config.numAISeats === 0 ? 'Heads-up' : `${config.numAISeats} seats`}
+            label={seatLabel(config.numAISeats)}
             on={config.numAISeats > 0}
-            onPress={() => setPlayConfig({ numAISeats: config.numAISeats >= 4 ? 0 : config.numAISeats + 2 })}
+            onPress={() => setPlayConfig({ numAISeats: nextSeatConfig(config.numAISeats) })}
           />
           <Toggle
             label={config.blackjackPayout}

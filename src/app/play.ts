@@ -19,6 +19,23 @@ export interface PlayRecord {
 
 export const EMPTY_RECORD: PlayRecord = { wins: 0, losses: 0, pushes: 0, chips: 0 };
 
+/** A blackjack table seats up to 6 players: you + 5 AI seats. */
+export const MAX_AI_SEATS = 5;
+
+/**
+ * Seat toggle cycle, expressed in TOTAL seats (including the player):
+ * Heads-up (1) → 2 → 3 → 4 → 5 → 6 → back to Heads-up.
+ * Stored as AI-seat count (= totalSeats − 1), stepping by one.
+ */
+export function nextSeatConfig(numAISeats: number): number {
+  return numAISeats >= MAX_AI_SEATS ? 0 : numAISeats + 1;
+}
+
+/** Toggle label by AI-seat count: 0 → "Heads-up", else total seats incl. you. */
+export function seatLabel(numAISeats: number): string {
+  return numAISeats === 0 ? 'Heads-up' : `${numAISeats + 1} seats`;
+}
+
 /** Tally the human seat's settled hands into the W/L/P + chips record. */
 export function foldRecord(record: PlayRecord, state: TableState): PlayRecord {
   const seat = state.seats.find((s) => s.isPlayer);
