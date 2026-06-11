@@ -5,10 +5,10 @@ project: count-trainer
 effort: E3
 effort_source: classifier
 phase: build
-progress: 110/112
+progress: 113/115
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
-updated: 2026-06-11T12:30:00-07:00
+updated: 2026-06-11T13:00:00-07:00
 live_url: https://remelofrontal-dev.github.io/count-trainer/
 ---
 
@@ -174,6 +174,11 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - [ ] ISC-108: Table Briefings (30s/mode, "?" re-open); global count-quiz mechanic; deal-speed animation [Quick Drill split out to ISC-112]
 - [ ] ISC-109: Trust layer — "Our Math" screen, score-meaning + Bet Spreads expectations cards, mandatory "Know the Law" card
 - [ ] ISC-110: Stats Hub (dial + 5 sub-skill bars, premium-tagged) + paywall preview (dormant while BETA_ALL_ACCESS)
+
+### Phase A2.1 — advisory gates (handoff v4 §3b, 2026-06-11)
+- [x] ISC-113: GATES_ADVISORY flag — gates measure+signal but never block in beta; flip restores blocking (lock UI kept, dev-toggleable)
+- [x] ISC-114: Readiness signals (Mastered/Tested-out/Recommended next/Ready ✓/"Not ready N% there"); all levels tappable; verified live
+- [x] ISC-115: Soft pre-entry note once per unready level (Jump in / Take me to prereq); skipAheads tracks the beta experiment
 
 ### Anti-criteria
 - [x] ISC-42: Anti: "stripe" appears nowhere in package.json or source
