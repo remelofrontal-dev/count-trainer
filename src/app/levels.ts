@@ -5,7 +5,7 @@
 
 import type { Tier } from './entitlement';
 
-export type DrillMode = 'card-tag' | 'running-count';
+export type DrillMode = 'card-tag' | 'running-count' | 'strategy' | 'true-count';
 
 export interface LevelDef {
   id: string;
@@ -56,6 +56,26 @@ export const LEVELS: readonly LevelDef[] = [
     cardsPerSession: 30,
     dealIntervalMs: 0,
     gate: { minAccuracy: 0.95, maxAvgMsPerCard: 1500 },
+  },
+  {
+    id: 'basic-strategy',
+    title: 'Basic strategy',
+    order: 4,
+    mode: 'strategy',
+    tier: 'free', // handoff §4: basic strategy is FREE ("learning blackjack is free")
+    cardsPerSession: 18,
+    dealIntervalMs: 0,
+    gate: { minAccuracy: 0.95, maxAvgMsPerCard: 4000 },
+  },
+  {
+    id: 'true-count',
+    title: 'True count',
+    order: 5,
+    mode: 'true-count',
+    tier: 'premium', // first premium gate ("becoming a counter is premium")
+    cardsPerSession: 15,
+    dealIntervalMs: 0,
+    gate: { minAccuracy: 0.9, maxAvgMsPerCard: 4000 },
   },
 ] as const;
 

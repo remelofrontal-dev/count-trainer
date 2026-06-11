@@ -30,8 +30,8 @@ async function completeDrill(store: Store, perfect: boolean) {
   const state = store.getState();
   while (store.getState().drill !== null && store.getState().drill!.status === 'running') {
     const drill = store.getState().drill!;
-    const right = expectedAnswer(drill, drill.index);
-    state.answerCurrent(perfect ? right : right === 1 ? -1 : 1);
+    const right = expectedAnswer(drill, drill.index); // normalized string, e.g. "1"/"0"/"-1"
+    state.answerCurrent(perfect ? right : right === '1' ? '-1' : '1');
   }
 }
 

@@ -14,7 +14,7 @@ import {
   sessionResult,
   tick,
 } from './drill';
-import { type Entitlement, FREE, loadEntitlement, saveEntitlement } from './entitlement';
+import { type Entitlement, FREE, hasAccess, loadEntitlement, saveEntitlement } from './entitlement';
 import {
   type TesterProfile,
   type TesterRegistry,
@@ -113,7 +113,7 @@ export interface AppState {
   submitName(name: string): Promise<boolean>;
   submitPlacement(persona: Persona, check: CheckStats | null): Promise<void>;
   startDrill(levelId: string): boolean;
-  answerCurrent(value: number): void;
+  answerCurrent(value: number | string): void;
   peekCount(): void;
   tickClock(): void;
   finishDrill(): Promise<void>;
@@ -195,16 +195,21 @@ export function createAppStore(deps: AppDeps) {
     },
 
     startDrill(levelId: string): boolean {
-      const { progress } = get();
+      const { progress, entitlement } = get();
+      const level = levelById(levelId);
       if (!isLevelUnlocked(levelId, clearedLevels(progress))) {
         return false; // gates, not menus — locked levels cannot start
       }
-      const drill = createDrill(levelById(levelId), deps.nextSeed(), deps.now());
+      // Premium boundary — written at every gate; resolves open while BETA_ALL_ACCESS.
+      if (!hasAccess(level.tier, entitlement)) {
+        return false;
+      }
+      const drill = createDrill(level, deps.nextSeed(), deps.now());
       set({ drill, screen: 'drill', lastGateJustPassed: false });
       return true;
     },
 
-    answerCurrent(value: number) {
+    answerCurrent(value: number | string) {
       const { drill } = get();
       if (drill === null) return;
       const next = answer(drill, value, deps.now());

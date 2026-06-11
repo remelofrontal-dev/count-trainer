@@ -60,13 +60,16 @@ export function coachInsight(opts: {
   }
 
   // 2) Disproportionate misses in one rank class — the most actionable signal.
+  // Only applies to count drills (which carry a single card per question).
   const missByClass: Record<RankClass, { miss: number; total: number }> = {
     aces: { miss: 0, total: 0 },
     tens: { miss: 0, total: 0 },
     low: { miss: 0, total: 0 },
   };
   for (const a of answers) {
-    const cls = rankClass(a.card.rank);
+    const card = a.question.card;
+    if (card === undefined) continue;
+    const cls = rankClass(card.rank);
     if (cls === null) continue;
     missByClass[cls].total += 1;
     if (!a.correct) missByClass[cls].miss += 1;

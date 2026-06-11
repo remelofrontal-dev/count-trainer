@@ -5,7 +5,12 @@ import { c } from '../../engine/__tests__/helpers';
 import type { Rank } from '../../engine/types';
 
 function rec(rank: Rank, correct: boolean, latencyMs = 1000): AnswerRecord {
-  return { card: c(rank), answer: correct ? 1 : 99, correct, latencyMs };
+  return {
+    question: { kind: 'card-tag', card: c(rank), expected: '1' },
+    answer: correct ? '1' : '99',
+    correct,
+    latencyMs,
+  };
 }
 
 describe('coachInsight v1', () => {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LEVELS } from '../../app/levels';
 import { clearedLevels, gatesPassed } from '../../app/progress';
-import { effectivePremium } from '../../app/entitlement';
+import { effectivePremium, showProTag } from '../../app/entitlement';
 import { isLevelUnlocked } from '../../app/levels';
 import { effectiveStreak, localDay } from '../../app/streak';
 import { theme } from '../../theme';
@@ -84,7 +84,10 @@ export function HomeScreen() {
                 </Text>
               </View>
               <View>
-                <Text style={[styles.nodeTitle, current && styles.nodeTitleNow]}>{level.title}</Text>
+                <View style={styles.nodeTitleRow}>
+                  <Text style={[styles.nodeTitle, current && styles.nodeTitleNow]}>{level.title}</Text>
+                  {showProTag(level.tier, entitlement) && <Text style={styles.nodePro}>PRO</Text>}
+                </View>
                 <Text style={styles.nodeSub}>
                   {done
                     ? `Mastered · ${Math.round((progress.levels[level.id]?.bestAccuracy ?? 0) * 100)}%`
@@ -220,7 +223,19 @@ const styles = StyleSheet.create({
   dotNow: { borderColor: theme.semantic.progress, borderWidth: 2 },
   dotText: { color: theme.colors.textSecondary, fontSize: 14, fontWeight: '700' },
   dotTextActive: { color: theme.semantic.progress },
+  nodeTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nodeTitle: { color: theme.colors.text, fontSize: 14, fontWeight: '500' },
   nodeTitleNow: { color: theme.semantic.progress, fontWeight: '600' },
+  nodePro: {
+    color: theme.colors.accent,
+    fontSize: 9,
+    letterSpacing: 1,
+    borderColor: theme.colors.accent,
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    overflow: 'hidden',
+  },
   nodeSub: { color: theme.colors.textSecondary, fontSize: 11 },
 });

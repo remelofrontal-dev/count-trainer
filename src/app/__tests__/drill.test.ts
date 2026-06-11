@@ -4,6 +4,7 @@ import {
   answer,
   createDrill,
   currentCard,
+  currentQuestion,
   expectedAnswer,
   peek,
   remainingMs,
@@ -12,35 +13,43 @@ import {
   tick,
 } from '../drill';
 import { levelById } from '../levels';
-import { countValue, runningCount } from '../../engine/counting';
+import { countValue, runningCount, trueCountFloored } from '../../engine/counting';
+import { basicStrategyAction, resolveAction } from '../../engine/basicStrategy';
+import { DEFAULT_RULES, type Card } from '../../engine/types';
 
 const L1 = levelById('card-values');
 const L3 = levelById('running-count-speed');
+const STRAT = levelById('basic-strategy');
+const TC = levelById('true-count');
 const T0 = 1_000_000;
 
+function qCards(drill: ReturnType<typeof createDrill>): Card[] {
+  return drill.questions.map((q) => q.card).filter((c): c is Card => c !== undefined);
+}
+
 describe('ISC-49: drill machine deals, grades, records latency', () => {
-  test('deals cardsPerSession cards and starts at index 0', () => {
+  test('deals cardsPerSession questions and starts at index 0', () => {
     const drill = createDrill(L1, 42, T0);
-    expect(drill.cards).toHaveLength(L1.cardsPerSession);
+    expect(drill.questions).toHaveLength(L1.cardsPerSession);
     expect(drill.index).toBe(0);
     expect(drill.status).toBe('running');
-    expect(currentCard(drill)).toEqual(drill.cards[0]);
+    expect(currentCard(drill)).toEqual(drill.questions[0]!.card);
   });
 
-  test('correct and incorrect answers are graded against the Hi-Lo tag', () => {
+  test('correct and incorrect answers are graded against the expected', () => {
     let drill = createDrill(L1, 42, T0);
-    const tag0 = countValue((drill.cards[0]!).rank);
+    const tag0 = countValue((drill.questions[0]!.card!).rank);
     drill = answer(drill, tag0, T0 + 800);
     expect(drill.answers[0]!.correct).toBe(true);
     expect(drill.answers[0]!.latencyMs).toBe(800);
 
-    const wrong = countValue((drill.cards[1]!).rank) === 1 ? -1 : 1;
+    const wrong = countValue((drill.questions[1]!.card!).rank) === 1 ? -1 : 1;
     drill = answer(drill, wrong, T0 + 1500);
     expect(drill.answers[1]!.correct).toBe(false);
     expect(drill.answers[1]!.latencyMs).toBe(700); // measured from previous deal
   });
 
-  test('finishes after the last card; further answers are no-ops', () => {
+  test('finishes after the last question; further answers are no-ops', () => {
     let drill = createDrill(L1, 7, T0);
     for (let i = 0; i < L1.cardsPerSession; i++) {
       drill = answer(drill, expectedAnswer(drill, drill.index), T0 + (i + 1) * 500);
@@ -52,11 +61,11 @@ describe('ISC-49: drill machine deals, grades, records latency', () => {
   });
 });
 
-describe('ISC-52: tags are the answer in every mode; running count tracked for peek', () => {
-  test('expectedAnswer is the Hi-Lo tag in running-count mode too', () => {
+describe('ISC-52: count modes grade the Hi-Lo tag; running count tracked for peek', () => {
+  test('expected is the normalized Hi-Lo tag in running-count mode too', () => {
     const drill = createDrill(L3, 11, T0);
     for (let i = 0; i < 5; i++) {
-      expect(expectedAnswer(drill, i)).toBe(countValue((drill.cards[i]!).rank));
+      expect(expectedAnswer(drill, i)).toBe(String(countValue((drill.questions[i]!.card!).rank)));
     }
   });
 
@@ -65,12 +74,63 @@ describe('ISC-52: tags are the answer in every mode; running count tracked for p
     drill = answer(drill, 0, T0 + 1);
     drill = answer(drill, 0, T0 + 2);
     drill = answer(drill, 0, T0 + 3);
-    expect(runningCountSoFar(drill)).toBe(runningCount(drill.cards.slice(0, 3)));
+    expect(runningCountSoFar(drill)).toBe(runningCount(qCards(drill).slice(0, 3)));
   });
 
-  test('expectedAnswer throws past the deck', () => {
+  test('expectedAnswer throws past the end', () => {
     const drill = createDrill(L1, 1, T0);
-    expect(() => expectedAnswer(drill, 999)).toThrow('No card');
+    expect(() => expectedAnswer(drill, 999)).toThrow('No question');
+  });
+});
+
+describe('ISC-105: strategy drill', () => {
+  test('each question carries a hand + dealer upcard and the book action as expected', () => {
+    const drill = createDrill(STRAT, 77, T0);
+    expect(drill.questions).toHaveLength(STRAT.cardsPerSession);
+    for (const q of drill.questions) {
+      expect(q.kind).toBe('strategy');
+      expect(q.hand).toHaveLength(2);
+      expect(q.dealerUp).toBeDefined();
+      const expected = resolveAction(basicStrategyAction(q.hand!, q.dealerUp!.rank, DEFAULT_RULES), {
+        canDouble: true,
+        canSurrender: false,
+      });
+      expect(q.expected).toBe(expected);
+      expect(['H', 'S', 'D', 'P']).toContain(q.expected);
+    }
+  });
+
+  test('answering the book action scores correct', () => {
+    let drill = createDrill(STRAT, 5, T0);
+    const q = currentQuestion(drill)!;
+    drill = answer(drill, q.expected, T0 + 1000);
+    expect(drill.answers[0]!.correct).toBe(true);
+  });
+});
+
+describe('ISC-105: true-count drill', () => {
+  test('each question gives RC + decks and the floored true count, kept in button range', () => {
+    const drill = createDrill(TC, 33, T0);
+    expect(drill.questions).toHaveLength(TC.cardsPerSession);
+    for (const q of drill.questions) {
+      expect(q.kind).toBe('true-count');
+      expect(q.runningCount).toBeDefined();
+      expect(q.decksRemaining).toBeGreaterThan(0);
+      expect(q.expected).toBe(String(trueCountFloored(q.runningCount!, q.decksRemaining!)));
+      const n = Number(q.expected);
+      expect(n).toBeGreaterThanOrEqual(-3);
+      expect(n).toBeLessThanOrEqual(5);
+    }
+  });
+
+  test('tapping the right number scores correct, wrong number misses', () => {
+    let drill = createDrill(TC, 9, T0);
+    const q = currentQuestion(drill)!;
+    drill = answer(drill, Number(q.expected), T0 + 1000);
+    expect(drill.answers[0]!.correct).toBe(true);
+    const q2 = currentQuestion(drill)!;
+    drill = answer(drill, Number(q2.expected) + 1, T0 + 2000);
+    expect(drill.answers[1]!.correct).toBe(false);
   });
 });
 

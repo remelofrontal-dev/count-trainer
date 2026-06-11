@@ -1,16 +1,30 @@
 import { describe, expect, test } from 'bun:test';
 import { LEVELS, evaluateGate, isLevelUnlocked, levelById } from '../levels';
 
-describe('ISC-46: level definitions', () => {
-  test('L1–L3 exist in order with 95% gates and tightening speed thresholds', () => {
-    expect(LEVELS.map((l) => l.id)).toEqual(['card-values', 'running-count-slow', 'running-count-speed']);
-    expect(LEVELS.map((l) => l.order)).toEqual([1, 2, 3]);
-    for (const level of LEVELS) {
-      expect(level.gate.minAccuracy).toBe(0.95);
-    }
-    expect(LEVELS.map((l) => l.gate.maxAvgMsPerCard)).toEqual([2500, 2000, 1500]);
+describe('ISC-46/105: level definitions', () => {
+  test('the path is the 5 levels in brief order with stable ids', () => {
+    expect(LEVELS.map((l) => l.id)).toEqual([
+      'card-values',
+      'running-count-slow',
+      'running-count-speed',
+      'basic-strategy',
+      'true-count',
+    ]);
+    expect(LEVELS.map((l) => l.order)).toEqual([1, 2, 3, 4, 5]);
     expect(levelById('card-values').title).toBe('Card values');
     expect(() => levelById('nope')).toThrow('Unknown level');
+  });
+
+  test('the counting levels gate at 95% with tightening speed', () => {
+    const counting = ['card-values', 'running-count-slow', 'running-count-speed'].map(levelById);
+    for (const level of counting) expect(level.gate.minAccuracy).toBe(0.95);
+    expect(counting.map((l) => l.gate.maxAvgMsPerCard)).toEqual([2500, 2000, 1500]);
+  });
+
+  test('tier map (handoff §4): Basic Strategy is FREE, True Count is the first premium gate', () => {
+    expect(levelById('card-values').tier).toBe('free');
+    expect(levelById('basic-strategy').tier).toBe('free');
+    expect(levelById('true-count').tier).toBe('premium');
   });
 });
 
