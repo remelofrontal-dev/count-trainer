@@ -5,10 +5,10 @@ project: count-trainer
 effort: E3
 effort_source: classifier
 phase: build
-progress: 102/110
+progress: 104/110
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
-updated: 2026-06-11T03:15:00-07:00
+updated: 2026-06-11T03:55:00-07:00
 live_url: https://remelofrontal-dev.github.io/count-trainer/
 ---
 
@@ -169,7 +169,9 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - [ ] ISC-105: Levels 4–9 (Basic Strategy free → True Count → Deck Est → Deviations → Bet Spreads → Full Table)
 - [x] ISC-106: Play mode UI — felt table (dealer+seats), Hit/Stand/Double/Split, Coach ON/OFF overlay (live RC+TC+book play), seat config (heads-up↔multi, PRO-tagged), 3:2↔6:5 toggle, W/L/P+chips header, count carries across rounds. Verified live via CDP (deal→coach RC−1→act→settle, 0 errors). [deal-speed selector + count-quiz fold into ISC-108]
 - [ ] ISC-107: Table Rules presets + Table Quality A–F grade + "why counters walk past 6:5" lesson
-- [ ] ISC-108: Table Briefings (30s/mode, "?" re-open); Quick Drill mode; global count-quiz mechanic
+- [x] ISC-111: Mode navigation (founder-requested gap) — bottom NavBar (Path·Modes·Play) on hub screens + Modes hub listing all 5 modes with SOON/PRO tags; verified live via CDP. modes.ts registry is the single source of truth.
+- [x] ISC-112: Quick Drill mode — Modes hub card expands to an inline picker of unlocked skills → drills any of them (ungated replay)
+- [ ] ISC-108: Table Briefings (30s/mode, "?" re-open); global count-quiz mechanic; deal-speed animation [Quick Drill split out to ISC-112]
 - [ ] ISC-109: Trust layer — "Our Math" screen, score-meaning + Bet Spreads expectations cards, mandatory "Know the Law" card
 - [ ] ISC-110: Stats Hub (dial + 5 sub-skill bars, premium-tagged) + paywall preview (dormant while BETA_ALL_ACCESS)
 
