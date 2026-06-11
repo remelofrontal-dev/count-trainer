@@ -1,14 +1,14 @@
 ---
-task: "Count Trainer tester slice: namegate, placement, coach, devmenu"
+task: "Count Trainer Phase A2: full premium features, modes, placement"
 slug: 20260610-193000_count-trainer-phase-1
 project: count-trainer
 effort: E3
 effort_source: classifier
-phase: complete
-progress: 90/92
+phase: build
+progress: 95/110
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
-updated: 2026-06-11T01:30:00-07:00
+updated: 2026-06-11T02:30:00-07:00
 live_url: https://remelofrontal-dev.github.io/count-trainer/
 ---
 
@@ -150,6 +150,28 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - [x] ISC-77: Interactive flow works on the LIVE URL: tap "DEAL ME IN" → drill screen with timer/card/zones (CDP click-through proof)
 - [x] ISC-78: Count-zone labels on the live site match engine truth (−1→10·J·Q·K·A, +1→2·3·4·5·6) — mockup-inversion fix verified in production DOM
 - [x] ISC-79: Anti: no secrets in the public repo (.env.example holds empty placeholders only; secret-pattern grep returns nothing)
+
+### Phase A2 — full build (handoff v3, founder chose Option B). Brief order: entitlement → table engine → placement → down the list.
+**Done this increment:**
+- [x] ISC-93: BETA_ALL_ACCESS launch switch — all premium resolves unlocked while true; flip to false = the split, no other code changes
+- [x] ISC-94: Entitlement checks at every premium boundary still written; effectivePremium/hasAccess/showProTag unit-tested
+- [x] ISC-95: devForceFree simulates the FREE tier during beta (test locked UX); Dev Menu exposes purchased-premium + force-free
+- [x] ISC-96: Tier map (handoff §4) — levels carry tier; 3 existing levels free; Basic Strategy free, True Count+ premium
+- [x] ISC-97: ENGINE_SOURCES.md documents 2 sources (Wizard of Odds + Wong) per strategy table — trust backbone
+- [x] ISC-98: Table engine state machine BETTING→PLAYER→DEALER→SETTLEMENT (src/engine/table.ts)
+- [x] ISC-99: Hit/Stand/Double/Split + multi-hand; split-21 is NOT a blackjack (even money) — unit-tested
+- [x] ISC-100: Settlement pays 3:2 AND 6:5 correctly (6:5 path explicitly tested — feeds the table-quality grade)
+- [x] ISC-101: 0–5 AI seats play basic strategy w/ tourist mistakes; their cards feed the count; dealing order tested
+- [x] ISC-102: Dealer H17/S17 rules; dealer stands pat when all players bust — unit-tested
+**Pending (next increments):**
+- [ ] ISC-103: Drill engine generalized to action (strategy) + number (true-count) question types
+- [ ] ISC-104: Level 0 Blackjack Basics — show-then-do micro-lessons (beginner on-ramp)
+- [ ] ISC-105: Levels 4–9 (Basic Strategy free → True Count → Deck Est → Deviations → Bet Spreads → Full Table)
+- [ ] ISC-106: Play mode UI (table render, actions, Coach ON/OFF, deal-speed, seat config, W/L/P + count-quiz header)
+- [ ] ISC-107: Table Rules presets + Table Quality A–F grade + "why counters walk past 6:5" lesson
+- [ ] ISC-108: Table Briefings (30s/mode, "?" re-open); Quick Drill mode; global count-quiz mechanic
+- [ ] ISC-109: Trust layer — "Our Math" screen, score-meaning + Bet Spreads expectations cards, mandatory "Know the Law" card
+- [ ] ISC-110: Stats Hub (dial + 5 sub-skill bars, premium-tagged) + paywall preview (dormant while BETA_ALL_ACCESS)
 
 ### Anti-criteria
 - [x] ISC-42: Anti: "stripe" appears nowhere in package.json or source
