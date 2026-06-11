@@ -54,9 +54,14 @@ export function httpRegistry(endpoint: string): TesterRegistry {
  * Pick the roster sink from build-time config. Set EXPO_PUBLIC_TESTER_ENDPOINT to
  * a Formspree form URL (https://formspree.io/f/XXXX) and names POST there on first
  * launch; unset, it's a local-only no-op.
+ *
+ * NOTE: the default MUST read `process.env.EXPO_PUBLIC_TESTER_ENDPOINT` with DOT
+ * notation — Metro only statically inlines that form at build time (bracket access
+ * is left as a runtime `undefined`). The `endpoint` param exists for tests.
  */
-export function registryFromEnv(env: Record<string, string | undefined> = process.env): TesterRegistry {
-  const endpoint = env['EXPO_PUBLIC_TESTER_ENDPOINT'];
+export function registryFromEnv(
+  endpoint: string | undefined = process.env.EXPO_PUBLIC_TESTER_ENDPOINT,
+): TesterRegistry {
   return endpoint !== undefined && endpoint !== '' ? httpRegistry(endpoint) : localOnlyRegistry;
 }
 

@@ -47,12 +47,11 @@ describe('tester registry', () => {
     ).resolves.toBeUndefined();
   });
 
-  test('registryFromEnv: local-only when unset, http when a Formspree endpoint is given', () => {
-    expect(registryFromEnv({})).toBe(localOnlyRegistry);
-    expect(registryFromEnv({ EXPO_PUBLIC_TESTER_ENDPOINT: '' })).toBe(localOnlyRegistry);
-    expect(registryFromEnv({ EXPO_PUBLIC_TESTER_ENDPOINT: 'https://formspree.io/f/abc' })).not.toBe(
-      localOnlyRegistry,
-    );
+  test('registryFromEnv: local-only for an empty endpoint, http for a real one', () => {
+    // Note: passing undefined would trigger the process.env default, so test the
+    // explicit branches (the default-from-env path is exercised by the build).
+    expect(registryFromEnv('')).toBe(localOnlyRegistry);
+    expect(registryFromEnv('https://formspree.io/f/abc')).not.toBe(localOnlyRegistry);
   });
 
   test('httpRegistry POSTs the profile and swallows network failure', async () => {
