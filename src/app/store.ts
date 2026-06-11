@@ -93,6 +93,7 @@ export interface AppState {
 
   // Developer Menu (debug only) — mock entitlement + progress overrides.
   devSetPremium(on: boolean): Promise<void>;
+  devForceFree(on: boolean): Promise<void>;
   devResetProgress(): Promise<void>;
   devSetCasinoReady(n: number): Promise<void>;
   devSetStreak(n: number): Promise<void>;
@@ -238,7 +239,13 @@ export function createAppStore(deps: AppDeps) {
     },
 
     async devSetPremium(on: boolean) {
-      const entitlement: Entitlement = { isPremium: on };
+      const entitlement: Entitlement = { ...get().entitlement, purchasedPremium: on };
+      await saveEntitlement(deps.storage, entitlement);
+      set({ entitlement });
+    },
+
+    async devForceFree(on: boolean) {
+      const entitlement: Entitlement = { ...get().entitlement, devForceFree: on };
       await saveEntitlement(deps.storage, entitlement);
       set({ entitlement });
     },

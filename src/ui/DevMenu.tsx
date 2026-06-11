@@ -9,8 +9,9 @@ import { useApp } from './appStore';
  * `isPremium` flag RevenueCat will set in Track B.
  */
 export function DevMenu({ onClose }: { onClose: () => void }) {
-  const isPremium = useApp((s) => s.entitlement.isPremium);
+  const ent = useApp((s) => s.entitlement);
   const devSetPremium = useApp((s) => s.devSetPremium);
+  const devForceFree = useApp((s) => s.devForceFree);
   const devUnlockAll = useApp((s) => s.devUnlockAll);
   const devResetProgress = useApp((s) => s.devResetProgress);
   const devSetCasinoReady = useApp((s) => s.devSetCasinoReady);
@@ -20,11 +21,17 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
     <View style={styles.overlay}>
       <ScrollView contentContainerStyle={styles.sheet}>
         <Text style={styles.title}>DEVELOPER MENU</Text>
+        <Text style={styles.note}>Beta: all-access ON. Force-free to test the locked experience.</Text>
 
         <Row
-          label={`Premium: ${isPremium ? 'ON' : 'OFF'}`}
-          action={isPremium ? 'Turn off' : 'Turn on'}
-          onPress={() => void devSetPremium(!isPremium)}
+          label={`Purchased premium: ${ent.purchasedPremium ? 'ON' : 'OFF'}`}
+          action={ent.purchasedPremium ? 'Turn off' : 'Turn on'}
+          onPress={() => void devSetPremium(!ent.purchasedPremium)}
+        />
+        <Row
+          label={`Force FREE tier: ${ent.devForceFree ? 'ON' : 'OFF'}`}
+          action={ent.devForceFree ? 'Unforce' : 'Force'}
+          onPress={() => void devForceFree(!ent.devForceFree)}
         />
         <Row label="Unlock all levels" action="Unlock" onPress={() => void devUnlockAll()} />
         <Row label="Casino Ready → 88" action="Set" onPress={() => void devSetCasinoReady(88)} />
@@ -83,8 +90,9 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.display,
     fontSize: 16,
     letterSpacing: 3,
-    marginBottom: 16,
+    marginBottom: 6,
   },
+  note: { color: theme.colors.textSecondary, fontSize: 11, marginBottom: 12 },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',

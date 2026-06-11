@@ -3,6 +3,8 @@
  * Gates, not menus (brief §4.2): a level unlocks only when the previous gate is passed.
  */
 
+import type { Tier } from './entitlement';
+
 export type DrillMode = 'card-tag' | 'running-count';
 
 export interface LevelDef {
@@ -10,6 +12,8 @@ export interface LevelDef {
   title: string;
   order: number;
   mode: DrillMode;
+  /** Free = blackjack school; premium = counting academy (handoff §4 tier map). */
+  tier: Tier;
   /** Cards dealt per drill session. */
   cardsPerSession: number;
   /** Time between deals; 0 = self-paced (answer advances). */
@@ -28,6 +32,7 @@ export const LEVELS: readonly LevelDef[] = [
     title: 'Card values',
     order: 1,
     mode: 'card-tag',
+    tier: 'free',
     cardsPerSession: 20,
     dealIntervalMs: 0,
     gate: { minAccuracy: 0.95, maxAvgMsPerCard: 2500 },
@@ -37,6 +42,7 @@ export const LEVELS: readonly LevelDef[] = [
     title: 'Running count',
     order: 2,
     mode: 'running-count',
+    tier: 'free',
     cardsPerSession: 25,
     dealIntervalMs: 0,
     gate: { minAccuracy: 0.95, maxAvgMsPerCard: 2000 },
@@ -46,6 +52,7 @@ export const LEVELS: readonly LevelDef[] = [
     title: 'Speed count',
     order: 3,
     mode: 'running-count',
+    tier: 'free',
     cardsPerSession: 30,
     dealIntervalMs: 0,
     gate: { minAccuracy: 0.95, maxAvgMsPerCard: 1500 },

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LEVELS } from '../../app/levels';
 import { clearedLevels, gatesPassed } from '../../app/progress';
+import { effectivePremium } from '../../app/entitlement';
 import { isLevelUnlocked } from '../../app/levels';
 import { effectiveStreak, localDay } from '../../app/streak';
 import { theme } from '../../theme';
@@ -13,7 +14,7 @@ export function HomeScreen() {
   const progress = useApp((s) => s.progress);
   const startDrill = useApp((s) => s.startDrill);
   const profileName = useApp((s) => s.profile?.name ?? '');
-  const isPremium = useApp((s) => s.entitlement.isPremium);
+  const entitlement = useApp((s) => s.entitlement);
   const mastered = gatesPassed(progress);
   const cleared = clearedLevels(progress);
   const streak = effectiveStreak(progress.streak, localDay(new Date()));
@@ -92,7 +93,11 @@ export function HomeScreen() {
           );
         })}
       </View>
-      {isPremium && <Text style={styles.premiumBadge}>★ PREMIUM ACTIVE</Text>}
+      {effectivePremium(entitlement) && (
+        <Text style={styles.premiumBadge}>
+          {entitlement.purchasedPremium ? '★ PREMIUM ACTIVE' : '★ BETA — ALL ACCESS'}
+        </Text>
+      )}
       {devOpen && <DevMenu onClose={() => setDevOpen(false)} />}
     </ScrollView>
   );

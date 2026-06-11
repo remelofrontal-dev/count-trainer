@@ -229,12 +229,14 @@ describe('flow: results, coach, one more round, persistence, sync', () => {
 });
 
 describe('Developer Menu (mock entitlement + overrides)', () => {
-  test('toggles premium and persists it', async () => {
+  test('toggles purchased premium and force-free, persisting both', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
-    expect(store.getState().entitlement.isPremium).toBe(false);
+    expect(store.getState().entitlement.purchasedPremium).toBe(false);
     await store.getState().devSetPremium(true);
-    expect(store.getState().entitlement.isPremium).toBe(true);
+    expect(store.getState().entitlement.purchasedPremium).toBe(true);
+    await store.getState().devForceFree(true);
+    expect(store.getState().entitlement.devForceFree).toBe(true);
   });
 
   test('forces Casino Ready (clamped 0–100) and sets streak', async () => {
