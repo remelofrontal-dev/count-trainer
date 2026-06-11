@@ -22,7 +22,7 @@ export function OnboardingScreen() {
         <Text style={styles.ctaText}>DEAL ME IN →</Text>
       </Pressable>
       <Text style={styles.disclaimer}>
-        Educational training tool. No real or fictional betting. 17+
+        Educational training tool. No real-money wagering. 17+
       </Text>
     </View>
   );
