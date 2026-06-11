@@ -16,6 +16,7 @@ export function HomeScreen() {
   const profileName = useApp((s) => s.profile?.name ?? '');
   const entitlement = useApp((s) => s.entitlement);
   const enterPlay = useApp((s) => s.enterPlay);
+  const enterBasics = useApp((s) => s.enterBasics);
   const mastered = gatesPassed(progress);
   const cleared = clearedLevels(progress);
   const streak = effectiveStreak(progress.streak, localDay(new Date()));
@@ -65,6 +66,17 @@ export function HomeScreen() {
       </Pressable>
 
       <View style={styles.path}>
+        <Pressable accessibilityRole="button" onPress={enterBasics} style={styles.node}>
+          <View style={[styles.dot, progress.basicsComplete && styles.dotDone, !progress.basicsComplete && styles.dotNow]}>
+            <Text style={[styles.dotText, styles.dotTextActive]}>{progress.basicsComplete ? '✓' : '0'}</Text>
+          </View>
+          <View>
+            <Text style={[styles.nodeTitle, !progress.basicsComplete && styles.nodeTitleNow]}>Blackjack basics</Text>
+            <Text style={styles.nodeSub}>
+              {progress.basicsComplete ? 'Done · replay anytime' : 'New here? Start with the 2-minute intro'}
+            </Text>
+          </View>
+        </Pressable>
         {LEVELS.map((level) => {
           const unlocked = isLevelUnlocked(level.id, cleared);
           const done = mastered.has(level.id);

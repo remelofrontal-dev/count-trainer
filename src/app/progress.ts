@@ -33,6 +33,8 @@ export interface ProgressState {
   placed: boolean;
   /** Casino Ready never drops below this placement-seeded floor (a hook, not a punishment). */
   seededFloor: number;
+  /** Level 0 Blackjack Basics lessons completed. */
+  basicsComplete: boolean;
 }
 
 export function emptyProgress(): ProgressState {
@@ -56,6 +58,7 @@ export function emptyProgress(): ProgressState {
     testedOut: [],
     placed: false,
     seededFloor: 0,
+    basicsComplete: false,
   };
 }
 

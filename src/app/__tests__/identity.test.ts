@@ -6,6 +6,7 @@ import {
   loadProfile,
   localOnlyRegistry,
   normalizeName,
+  registryFromEnv,
   saveProfile,
 } from '../identity';
 import { InMemoryStorage } from '../storage';
@@ -46,6 +47,14 @@ describe('tester registry', () => {
     ).resolves.toBeUndefined();
   });
 
+  test('registryFromEnv: local-only when unset, http when a Formspree endpoint is given', () => {
+    expect(registryFromEnv({})).toBe(localOnlyRegistry);
+    expect(registryFromEnv({ EXPO_PUBLIC_TESTER_ENDPOINT: '' })).toBe(localOnlyRegistry);
+    expect(registryFromEnv({ EXPO_PUBLIC_TESTER_ENDPOINT: 'https://formspree.io/f/abc' })).not.toBe(
+      localOnlyRegistry,
+    );
+  });
+
   test('httpRegistry POSTs the profile and swallows network failure', async () => {
     const calls: { url: string; body: unknown }[] = [];
     const realFetch = globalThis.fetch;
@@ -56,7 +65,7 @@ describe('tester registry', () => {
     }) as unknown as typeof fetch;
     await httpRegistry('https://collector.example/r').register({ name: 'Remelo', joinedAtIso: 'iso' });
     expect(calls).toHaveLength(1);
-    expect(calls[0]!.body).toEqual({ name: 'Remelo', joinedAtIso: 'iso' });
+    expect(calls[0]!.body).toEqual({ name: 'Remelo', joinedAt: 'iso' }); // Formspree-friendly field names
 
     // failure path must not throw (offline-first)
     globalThis.fetch = (async () => {

@@ -4,6 +4,7 @@ import { theme } from '../theme';
 import { appStore, useApp } from './appStore';
 import type { Screen } from '../app/store';
 import { NavBar } from './NavBar';
+import { BasicsScreen } from './screens/BasicsScreen';
 import { DrillScreen } from './screens/DrillScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { InfoScreen } from './screens/InfoScreen';
@@ -49,6 +50,8 @@ function renderScreen(screen: Screen) {
       return <ModesScreen />;
     case 'info':
       return <InfoScreen />;
+    case 'basics':
+      return <BasicsScreen />;
     case 'drill':
       return <DrillScreen />;
     case 'results':

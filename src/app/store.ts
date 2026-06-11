@@ -51,7 +51,16 @@ import {
   tableRunningCount,
 } from '../engine/table';
 
-export type Screen = 'namegate' | 'placement' | 'home' | 'modes' | 'info' | 'drill' | 'results' | 'play';
+export type Screen =
+  | 'namegate'
+  | 'placement'
+  | 'home'
+  | 'modes'
+  | 'info'
+  | 'basics'
+  | 'drill'
+  | 'results'
+  | 'play';
 
 export const PLAY_BET = 100;
 
@@ -105,6 +114,8 @@ export interface AppState {
   init(): Promise<void>;
   goModes(): void;
   goInfo(): void;
+  enterBasics(): void;
+  completeBasics(): Promise<void>;
   enterPlay(): void;
   exitPlay(): void;
   setPlayConfig(partial: Partial<TableConfig>): void;
@@ -191,7 +202,9 @@ export function createAppStore(deps: AppDeps) {
     async submitPlacement(persona: Persona, check: CheckStats | null): Promise<void> {
       const outcome = evaluatePlacement(persona, check);
       const next = applyPlacement(get().progress, outcome);
-      set({ progress: next, screen: 'home' });
+      // Beginners go straight into Level 0 lessons; everyone else lands on the path.
+      const screen: Screen = persona === 'new' && !next.basicsComplete ? 'basics' : 'home';
+      set({ progress: next, screen });
       await saveProgress(deps.storage, next);
     },
 
@@ -286,6 +299,16 @@ export function createAppStore(deps: AppDeps) {
 
     goInfo() {
       set({ screen: 'info' });
+    },
+
+    enterBasics() {
+      set({ screen: 'basics' });
+    },
+
+    async completeBasics() {
+      const next: ProgressState = { ...get().progress, basicsComplete: true };
+      set({ progress: next, screen: 'home' });
+      await saveProgress(deps.storage, next);
     },
 
     enterPlay() {

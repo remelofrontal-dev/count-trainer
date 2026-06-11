@@ -30,8 +30,9 @@ export const localOnlyRegistry: TesterRegistry = {
 };
 
 /**
- * POSTs registrations to a collector URL (e.g. a Formspree form or a Worker).
+ * POSTs registrations to a collector URL (Formspree form, Worker, etc.).
  * Offline-first: a failed POST is swallowed; the local profile is the source of truth.
+ * The `Accept: application/json` header keeps Formspree from issuing a redirect.
  */
 export function httpRegistry(endpoint: string): TesterRegistry {
   return {
@@ -39,14 +40,24 @@ export function httpRegistry(endpoint: string): TesterRegistry {
       try {
         await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(profile),
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ name: profile.name, joinedAt: profile.joinedAtIso }),
         });
       } catch {
         /* offline-first: roster delivery is best-effort, never blocks play */
       }
     },
   };
+}
+
+/**
+ * Pick the roster sink from build-time config. Set EXPO_PUBLIC_TESTER_ENDPOINT to
+ * a Formspree form URL (https://formspree.io/f/XXXX) and names POST there on first
+ * launch; unset, it's a local-only no-op.
+ */
+export function registryFromEnv(env: Record<string, string | undefined> = process.env): TesterRegistry {
+  const endpoint = env['EXPO_PUBLIC_TESTER_ENDPOINT'];
+  return endpoint !== undefined && endpoint !== '' ? httpRegistry(endpoint) : localOnlyRegistry;
 }
 
 const PROFILE_KEY = 'count-trainer/tester/v1';

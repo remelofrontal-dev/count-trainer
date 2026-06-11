@@ -20,10 +20,11 @@ function makeDeps(over: Partial<AppDeps> = {}): AppDeps {
 
 type Store = ReturnType<typeof createAppStore>;
 
-/** Run the name gate + placement so the store lands on home, ready to drill. */
+/** Run name gate + placement (+ skip Level 0) so the store lands on home, ready to drill. */
 async function onboard(store: Store, persona: 'new' | 'knows-play' | 'counts' = 'new') {
   await store.getState().submitName('Remelo');
   await store.getState().submitPlacement(persona, null);
+  if (store.getState().screen === 'basics') await store.getState().completeBasics();
 }
 
 async function completeDrill(store: Store, perfect: boolean) {
@@ -50,8 +51,10 @@ describe('name gate + placement entry flow', () => {
     expect(store.getState().screen).toBe('placement');
 
     await store.getState().submitPlacement('new', null);
-    expect(store.getState().screen).toBe('home');
+    expect(store.getState().screen).toBe('basics'); // beginners go to Level 0 first
     expect(store.getState().progress.placed).toBe(true);
+    await store.getState().completeBasics();
+    expect(store.getState().screen).toBe('home');
   });
 
   test('the tester registry receives the name (founder roster)', async () => {
