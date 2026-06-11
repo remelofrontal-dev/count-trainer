@@ -6,6 +6,7 @@ import { DrillScreen } from './screens/DrillScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { NameGateScreen } from './screens/NameGateScreen';
 import { PlacementScreen } from './screens/PlacementScreen';
+import { PlayScreen } from './screens/PlayScreen';
 import { ResultsScreen } from './screens/ResultsScreen';
 
 /** Navigation root — Zustand-driven screen switch (see ISA Decisions). */
@@ -31,5 +32,7 @@ export function AppRoot() {
       return <DrillScreen />;
     case 'results':
       return <ResultsScreen />;
+    case 'play':
+      return <PlayScreen />;
   }
 }

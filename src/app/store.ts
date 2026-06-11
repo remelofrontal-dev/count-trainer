@@ -36,11 +36,24 @@ import {
   recordSession,
   saveProgress,
 } from './progress';
+import { EMPTY_RECORD, type PlayRecord, foldRecord } from './play';
 import { EMPTY_STREAK, localDay } from './streak';
 import { type SyncClient, drainQueue, enqueueScore } from './sync';
 import type { KVStorage } from './storage';
+import { Shoe } from '../engine/deck';
+import {
+  type PlayerAction,
+  type TableConfig,
+  type TableState,
+  DEFAULT_TABLE,
+  act as tableAct,
+  startRound,
+  tableRunningCount,
+} from '../engine/table';
 
-export type Screen = 'namegate' | 'placement' | 'home' | 'drill' | 'results';
+export type Screen = 'namegate' | 'placement' | 'home' | 'drill' | 'results' | 'play';
+
+export const PLAY_BET = 100;
 
 export interface AppDeps {
   storage: KVStorage;
@@ -80,7 +93,22 @@ export interface AppState {
   lastGateJustPassed: boolean;
   ready: boolean;
 
+  // Play mode (full blackjack table)
+  playConfig: TableConfig;
+  play: TableState | null;
+  playShoe: Shoe | null;
+  /** Running count accumulated from completed rounds this shoe (count carries). */
+  playCount: number;
+  playRecord: PlayRecord;
+  playCoach: boolean;
+
   init(): Promise<void>;
+  enterPlay(): void;
+  exitPlay(): void;
+  setPlayConfig(partial: Partial<TableConfig>): void;
+  togglePlayCoach(): void;
+  dealRound(): void;
+  playAct(action: PlayerAction): void;
   submitName(name: string): Promise<boolean>;
   submitPlacement(persona: Persona, check: CheckStats | null): Promise<void>;
   startDrill(levelId: string): boolean;
@@ -118,6 +146,13 @@ export function createAppStore(deps: AppDeps) {
     lastInsight: null,
     lastGateJustPassed: false,
     ready: false,
+
+    playConfig: DEFAULT_TABLE,
+    play: null,
+    playShoe: null,
+    playCount: 0,
+    playRecord: EMPTY_RECORD,
+    playCoach: true,
 
     async init() {
       // Best-effort: a corrupt local store must never block startup.
@@ -236,6 +271,59 @@ export function createAppStore(deps: AppDeps) {
 
     goHome() {
       set({ screen: 'home' });
+    },
+
+    enterPlay() {
+      set({ screen: 'play' });
+    },
+
+    exitPlay() {
+      set({ screen: 'home' });
+    },
+
+    setPlayConfig(partial: Partial<TableConfig>) {
+      // A config change starts a fresh shoe (and resets the carried count).
+      set({
+        playConfig: { ...get().playConfig, ...partial },
+        playShoe: null,
+        play: null,
+        playCount: 0,
+      });
+    },
+
+    togglePlayCoach() {
+      set({ playCoach: !get().playCoach });
+    },
+
+    dealRound() {
+      const { playConfig } = get();
+      let shoe = get().playShoe;
+      let playCount = get().playCount;
+      // Fresh shoe at start or once the cut card is reached — count resets with it.
+      if (shoe === null || shoe.cutCardReached) {
+        shoe = new Shoe(playConfig.decks, { seed: deps.nextSeed() });
+        playCount = 0;
+      }
+      let state = startRound(playConfig, shoe, PLAY_BET, deps.nextSeed());
+      let record = get().playRecord;
+      // If the round resolved immediately (dealer natural), fold it now.
+      if (state.phase === 'settlement') {
+        record = foldRecord(record, state);
+        playCount += tableRunningCount(state);
+      }
+      set({ play: state, playShoe: shoe, playCount, playRecord: record });
+    },
+
+    playAct(action: PlayerAction) {
+      const state = get().play;
+      if (state === null || state.phase !== 'player') return;
+      const next = tableAct(state, action);
+      let { playCount, playRecord } = get();
+      if (next.phase === 'settlement') {
+        playRecord = foldRecord(playRecord, next);
+        playCount += tableRunningCount(next);
+      }
+      set({ play: next, playCount, playRecord });
     },
 
     async devSetPremium(on: boolean) {

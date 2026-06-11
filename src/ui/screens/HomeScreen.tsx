@@ -15,6 +15,7 @@ export function HomeScreen() {
   const startDrill = useApp((s) => s.startDrill);
   const profileName = useApp((s) => s.profile?.name ?? '');
   const entitlement = useApp((s) => s.entitlement);
+  const enterPlay = useApp((s) => s.enterPlay);
   const mastered = gatesPassed(progress);
   const cleared = clearedLevels(progress);
   const streak = effectiveStreak(progress.streak, localDay(new Date()));
@@ -57,6 +58,11 @@ export function HomeScreen() {
           label="BEST ACC"
         />
       </View>
+
+      <Pressable accessibilityRole="button" style={styles.playBtn} onPress={enterPlay}>
+        <Text style={styles.playText}>♠ PLAY BLACKJACK</Text>
+        <Text style={styles.playSub}>Full table · count for real · coach optional</Text>
+      </Pressable>
 
       <View style={styles.path}>
         {LEVELS.map((level) => {
@@ -181,6 +187,22 @@ const styles = StyleSheet.create({
   statV: { color: theme.colors.text, fontFamily: theme.typography.display, fontSize: 18, fontWeight: '700' },
   statGold: { color: theme.colors.accent },
   statK: { color: theme.colors.textSecondary, fontSize: 9, letterSpacing: 1.5 },
+  playBtn: {
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.accent,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 18,
+  },
+  playText: {
+    color: theme.colors.accent,
+    fontFamily: theme.typography.display,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  playSub: { color: theme.colors.textSecondary, fontSize: 12, marginTop: 2 },
   path: { gap: 4 },
   node: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9 },
   nodeLocked: { opacity: 0.42 },
