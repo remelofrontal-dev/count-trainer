@@ -1,14 +1,15 @@
 ---
-task: "Count Trainer Phase 1: free core MVP app layer"
+task: "Count Trainer Phase 1 + shareable web v1 deployed"
 slug: 20260610-193000_count-trainer-phase-1
 project: count-trainer
 effort: E3
 effort_source: classifier
-phase: verify
-progress: 68/69
+phase: complete
+progress: 78/79
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
-updated: 2026-06-10T19:50:00-07:00
+updated: 2026-06-11T00:10:00-07:00
+live_url: https://remelofrontal-dev.github.io/count-trainer/
 ---
 
 # ISA — Count Trainer (Phase 0: Foundation)
@@ -136,6 +137,20 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - [x] ISC-68: Anti: emerald enforcement test still passes with all new UI files (no raw #3DDC84 outside tokens)
 - [ ] ISC-69: [DEFERRED-VERIFY] Live device flow: install → counting cards → first result → streak day 2, zero crashes (follow-up: founder runs `bunx expo start` on device; tracked as Phase 1 QA task in Decisions)
 
+### Phase 1.1 — Forge-fix hardening (gate integrity + resilience)
+- [x] ISC-70: Mastery gate requires completion — answering < cardsPerSession fails the gate even at 100% accuracy/speed (closes the 1-card+timeout bypass Forge proved at runtime)
+- [x] ISC-71: loadProgress never throws on a corrupt local blob — falls back to emptyProgress (startup cannot brick)
+- [x] ISC-72: sync queue tolerates corrupted JSON (returns []), never throws, capped at MAX_QUEUE=500 (no unbounded growth)
+- [x] ISC-73: synced ScoreEvent carries the peek count (honesty signal preserved for server validation)
+
+### Phase 1.2 — Web distribution (shareable free v1)
+- [x] ISC-74: `bunx expo export -p web` produces dist/ with index.html + hashed JS bundle, zero build errors
+- [x] ISC-75: Deployed public URL returns HTTP 200 and references the app bundle
+- [x] ISC-76: Deployed site renders in a real browser engine (onboarding: felt bg, display headline, emerald CTA) — headless-Chrome screenshot evidence
+- [x] ISC-77: Interactive flow works on the LIVE URL: tap "DEAL ME IN" → drill screen with timer/card/zones (CDP click-through proof)
+- [x] ISC-78: Count-zone labels on the live site match engine truth (−1→10·J·Q·K·A, +1→2·3·4·5·6) — mockup-inversion fix verified in production DOM
+- [x] ISC-79: Anti: no secrets in the public repo (.env.example holds empty placeholders only; secret-pattern grep returns nothing)
+
 ### Anti-criteria
 - [x] ISC-42: Anti: "stripe" appears nowhere in package.json or source
 - [x] ISC-43: Anti: raw #3DDC84 appears nowhere in src/ outside src/theme/tokens.ts
@@ -199,6 +214,10 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - 2026-06-10 (Phase 1): Supabase auth+sync ships as offline-first scaffold behind env placeholders (no project credentials exist yet). Queue-and-drain sync is unit-tested against a mock; live sync is DEFERRED-VERIFY (ISC-69 companion). Founder action: create Supabase project, fill .env.
 - 2026-06-10 (Phase 1): show-your-math (delegation floor 1/2): app layer is single-author greenfield over a verified engine — no search targets, no parallel write surfaces. Forge covers the E3 coding binding as adversarial reviewer of gate/streak/drill logic.
 
+- 2026-06-11 (Forge review): verdict FAIL — runtime-proven CRITICAL: answering one card then letting the 120s cap fire passed a 95% mastery gate (accuracy computed over cards ANSWERED, not dealt). Plus 4 MAJOR (corrupt-blob startup brick, unguarded queue parse, unbounded queue, peeks dropped from sync). No conflict with empirical results — findings reproduced, so fixed directly rather than re-calling advisor. All 5 fixed + 8 regression tests added.
+- 2026-06-11 (web deploy): chose GitHub Pages over Cloudflare Pages (the documented default) — no CF auth present on this machine, but `gh` was authed as remelofrontal-dev with repo scope. Pages is fully autonomous given gh auth. Two Expo-on-Pages requirements handled: experiments.baseUrl="/count-trainer" (project pages serve under a subpath) and .nojekyll (Pages otherwise strips Expo's _expo/ underscore dir). Site is a single-route SPA (Zustand screen switch, no URL routing) so no deep-link 404 problem. Repo is PUBLIC (free-tier Pages requires it) — no secrets present. Migration path to Cloudflare stays open per [[default-client-stack]].
+- 2026-06-11 (web deploy): commit emails rewritten to GitHub noreply (263505833+remelofrontal-dev@users.noreply.github.com) via filter-branch — initial push was rejected by GitHub's email-privacy protection on the iCloud address.
+
 ## Changelog
 
 - **conjectured:** exhaustive-coverage + diff-set + spot-check tests were sufficient to verify strategy-table correctness.
@@ -255,3 +274,16 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - ISC-67: bun test — sync: null-client no-op, queue intact; success drains+clears; failure retains; env parsing null-safe
 - ISC-68: Bash — #3DDC84 outside tokens.ts: 0 files (enforcement test also green)
 - ISC-69: DEFERRED-VERIFY — requires device; follow-up: founder runs `bunx expo start`, walks install→result→streak day 2
+
+### Phase 1.1 + 1.2 (2026-06-11)
+- ISC-70: bun test — levels.test "incomplete session fails the gate" + store.test "1 card then timeout does NOT pass gate / next level still locked" PASS
+- ISC-71: bun test — progress.test "loadProgress never throws on corrupt blob" + store.test "init recovers from corrupted progress blob" PASS
+- ISC-72: bun test — sync.test "corrupt queue never throws" + "queue capped at MAX_QUEUE dropping oldest" PASS
+- ISC-73: bun test — store.test "synced score event carries the peek count" → pushed[0].peeks === 1
+- ISC-74: Bash — `bunx expo export -p web` → "Exported: dist", index.html + AppEntry-*.js (376 kB), 0 errors
+- ISC-75: Bash — curl https://remelofrontal-dev.github.io/count-trainer/ → HTTP 200, body references _expo/static
+- ISC-76: headless Chrome screenshot /tmp/ct-live.png — onboarding renders: felt bg, brass eyebrow, "ZERO TO CASINO READY" display headline, emerald "DEAL ME IN", disclaimer
+- ISC-77: CDP click-through (node WebSocket) — BEFORE=onboarding; click "DEAL ME IN"; AFTER="CARD VALUES ⏱ 2:00 8 ♦ ... PEEK −1 ... +1 ..."; tapping +1 zone → ANSWERED
+- ISC-78: CDP DOM read on live URL — zones: "−1 → 10 · J · Q · K · A", "+1 → 2 · 3 · 4 · 5 · 6" (engine truth, mockup inversion corrected)
+- ISC-79: Bash — git ls-files shows only .env.example (empty placeholders); secret-pattern grep returns nothing
+- post-fix suite: 126 pass / 0 fail / 5900 assertions; tsc --noEmit exit 0; engine coverage 100%
