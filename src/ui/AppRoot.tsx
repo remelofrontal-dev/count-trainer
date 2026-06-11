@@ -4,7 +4,8 @@ import { theme } from '../theme';
 import { appStore, useApp } from './appStore';
 import { DrillScreen } from './screens/DrillScreen';
 import { HomeScreen } from './screens/HomeScreen';
-import { OnboardingScreen } from './screens/OnboardingScreen';
+import { NameGateScreen } from './screens/NameGateScreen';
+import { PlacementScreen } from './screens/PlacementScreen';
 import { ResultsScreen } from './screens/ResultsScreen';
 
 /** Navigation root — Zustand-driven screen switch (see ISA Decisions). */
@@ -20,8 +21,10 @@ export function AppRoot() {
     return <View style={{ flex: 1, backgroundColor: theme.colors.background }} />;
   }
   switch (screen) {
-    case 'onboarding':
-      return <OnboardingScreen />;
+    case 'namegate':
+      return <NameGateScreen />;
+    case 'placement':
+      return <PlacementScreen />;
     case 'home':
       return <HomeScreen />;
     case 'drill':

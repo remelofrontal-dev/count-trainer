@@ -27,6 +27,12 @@ export interface ProgressState {
   totalSessions: number;
   /** Set after the first Results screen — account creation is prompted then, never before. */
   hasSeenFirstResult: boolean;
+  /** Levels cleared by the Placement Check — unlock the path but are NOT "Mastered". */
+  testedOut: string[];
+  /** True once placement onboarding has run (gates the placement flow). */
+  placed: boolean;
+  /** Casino Ready never drops below this placement-seeded floor (a hook, not a punishment). */
+  seededFloor: number;
 }
 
 export function emptyProgress(): ProgressState {
@@ -47,15 +53,43 @@ export function emptyProgress(): ProgressState {
     recentScores: [],
     totalSessions: 0,
     hasSeenFirstResult: false,
+    testedOut: [],
+    placed: false,
+    seededFloor: 0,
   };
 }
 
+/** Levels the user has truly MASTERED (passed the gate by playing). */
 export function gatesPassed(progress: ProgressState): Set<string> {
   return new Set(
     Object.entries(progress.levels)
       .filter(([, p]) => p.gatePassed)
       .map(([id]) => id),
   );
+}
+
+/**
+ * Levels that count as cleared for UNLOCK purposes — mastered OR tested out.
+ * "Tested out" opens the path forward without claiming mastery.
+ */
+export function clearedLevels(progress: ProgressState): Set<string> {
+  const set = gatesPassed(progress);
+  for (const id of progress.testedOut) set.add(id);
+  return set;
+}
+
+/** Apply a Placement Check outcome: record tested-out levels + seed Casino Ready. */
+export function applyPlacement(
+  progress: ProgressState,
+  outcome: { testedOut: string[]; seededCasinoReady: number },
+): ProgressState {
+  return {
+    ...progress,
+    placed: true,
+    testedOut: [...new Set([...progress.testedOut, ...outcome.testedOut])],
+    casinoReady: Math.max(progress.casinoReady, outcome.seededCasinoReady),
+    seededFloor: Math.max(progress.seededFloor, outcome.seededCasinoReady),
+  };
 }
 
 /** Fold a finished session into progress. `gateJustPassed` drives the gate-unlock celebration. */
@@ -85,7 +119,7 @@ export function recordSession(
       ...progress,
       levels: { ...progress.levels, [result.levelId]: levelNext },
       streak: recordCompletion(progress.streak, day),
-      casinoReady: Math.max(...recentScores, 0),
+      casinoReady: Math.max(...recentScores, progress.seededFloor),
       recentScores,
       totalSessions: progress.totalSessions + 1,
     },

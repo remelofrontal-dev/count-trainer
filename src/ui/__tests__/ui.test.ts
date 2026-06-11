@@ -64,17 +64,23 @@ describe('ISC-62: results screen has exactly one dominant CTA', () => {
   });
 });
 
-describe('ISC-58/64: screens exist and the root registers all four', () => {
-  test('all four screen files exist', () => {
+describe('ISC-58/64: screens exist and the root registers them', () => {
+  test('all screen files exist', () => {
     const files = readdirSync(SCREENS_DIR);
-    for (const name of ['OnboardingScreen.tsx', 'HomeScreen.tsx', 'DrillScreen.tsx', 'ResultsScreen.tsx']) {
+    for (const name of [
+      'NameGateScreen.tsx',
+      'PlacementScreen.tsx',
+      'HomeScreen.tsx',
+      'DrillScreen.tsx',
+      'ResultsScreen.tsx',
+    ]) {
       expect(files).toContain(name);
     }
   });
 
-  test('AppRoot switches across all four screens', () => {
+  test('AppRoot switches across all screens', () => {
     const source = readFileSync(join(UI_DIR, 'AppRoot.tsx'), 'utf8');
-    for (const screen of ['onboarding', 'home', 'drill', 'results']) {
+    for (const screen of ['namegate', 'placement', 'home', 'drill', 'results']) {
       expect(source.includes(`case '${screen}'`)).toBe(true);
     }
   });

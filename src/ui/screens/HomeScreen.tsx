@@ -1,24 +1,46 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LEVELS } from '../../app/levels';
-import { gatesPassed } from '../../app/progress';
+import { clearedLevels, gatesPassed } from '../../app/progress';
 import { isLevelUnlocked } from '../../app/levels';
 import { effectiveStreak, localDay } from '../../app/streak';
 import { theme } from '../../theme';
 import { useApp } from '../appStore';
+import { DevMenu } from '../DevMenu';
 
 /** Home: Casino Ready chip + stat row + vertical skill path (mockup screen 01). */
 export function HomeScreen() {
   const progress = useApp((s) => s.progress);
   const startDrill = useApp((s) => s.startDrill);
-  const passed = gatesPassed(progress);
+  const profileName = useApp((s) => s.profile?.name ?? '');
+  const isPremium = useApp((s) => s.entitlement.isPremium);
+  const mastered = gatesPassed(progress);
+  const cleared = clearedLevels(progress);
   const streak = effectiveStreak(progress.streak, localDay(new Date()));
+
+  // Hidden Developer Menu — tap the title 5× (testers won't stumble on it).
+  const [titleTaps, setTitleTaps] = useState(0);
+  const [devOpen, setDevOpen] = useState(false);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.topbar}>
-        <Text style={styles.lbl}>COUNT TRAINER</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            const n = titleTaps + 1;
+            setTitleTaps(n);
+            if (n >= 5) {
+              setDevOpen(true);
+              setTitleTaps(0);
+            }
+          }}
+        >
+          <Text style={styles.lbl}>COUNT TRAINER</Text>
+        </Pressable>
         <Text style={styles.pill}>🔥 {streak}-day streak</Text>
       </View>
+      {profileName !== '' && <Text style={styles.hello}>Hey {profileName} 👋</Text>}
 
       <View style={styles.chip}>
         <Text style={styles.score}>{progress.casinoReady}</Text>
@@ -37,9 +59,10 @@ export function HomeScreen() {
 
       <View style={styles.path}>
         {LEVELS.map((level) => {
-          const unlocked = isLevelUnlocked(level.id, passed);
-          const done = passed.has(level.id);
-          const current = unlocked && !done;
+          const unlocked = isLevelUnlocked(level.id, cleared);
+          const done = mastered.has(level.id);
+          const testedOut = progress.testedOut.includes(level.id) && !done;
+          const current = unlocked && !done && !testedOut;
           return (
             <Pressable
               key={level.id}
@@ -49,8 +72,8 @@ export function HomeScreen() {
               style={[styles.node, !unlocked && styles.nodeLocked]}
             >
               <View style={[styles.dot, done && styles.dotDone, current && styles.dotNow]}>
-                <Text style={[styles.dotText, (done || current) && styles.dotTextActive]}>
-                  {done ? '✓' : unlocked ? '▶' : '🔒'}
+                <Text style={[styles.dotText, (done || current || testedOut) && styles.dotTextActive]}>
+                  {done ? '✓' : testedOut ? '✦' : unlocked ? '▶' : '🔒'}
                 </Text>
               </View>
               <View>
@@ -58,15 +81,19 @@ export function HomeScreen() {
                 <Text style={styles.nodeSub}>
                   {done
                     ? `Mastered · ${Math.round((progress.levels[level.id]?.bestAccuracy ?? 0) * 100)}%`
-                    : unlocked
-                      ? `Gate: ${Math.round(level.gate.minAccuracy * 100)}% at ${(level.gate.maxAvgMsPerCard / 1000).toFixed(1)}s/card`
-                      : 'Pass the gate to unlock'}
+                    : testedOut
+                      ? 'Tested out ✓ — replay anytime'
+                      : unlocked
+                        ? `Gate: ${Math.round(level.gate.minAccuracy * 100)}% at ${(level.gate.maxAvgMsPerCard / 1000).toFixed(1)}s/card`
+                        : 'Pass the gate to unlock'}
                 </Text>
               </View>
             </Pressable>
           );
         })}
       </View>
+      {isPremium && <Text style={styles.premiumBadge}>★ PREMIUM ACTIVE</Text>}
+      {devOpen && <DevMenu onClose={() => setDevOpen(false)} />}
     </ScrollView>
   );
 }
@@ -83,7 +110,15 @@ function Stat({ value, label, gold }: { value: string; label: string; gold?: boo
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 22, paddingTop: 64 },
-  topbar: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 18 },
+  topbar: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  hello: { color: theme.colors.text, fontSize: 15, marginBottom: 14 },
+  premiumBadge: {
+    color: theme.colors.accent,
+    fontSize: 11,
+    letterSpacing: 2,
+    textAlign: 'center',
+    marginTop: 18,
+  },
   lbl: {
     color: theme.colors.textSecondary,
     fontFamily: theme.typography.display,

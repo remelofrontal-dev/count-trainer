@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { expectedAnswer } from '../drill';
+import { localOnlyRegistry } from '../identity';
 import { levelById } from '../levels';
 import { type AppDeps, createAppStore } from '../store';
 import { InMemoryStorage } from '../storage';
@@ -12,11 +13,20 @@ function makeDeps(over: Partial<AppDeps> = {}): AppDeps {
     today: () => '2026-06-10',
     nextSeed: () => 42,
     syncClient: null,
+    registry: localOnlyRegistry,
     ...over,
   };
 }
 
-async function completeDrill(store: ReturnType<typeof createAppStore>, perfect: boolean) {
+type Store = ReturnType<typeof createAppStore>;
+
+/** Run the name gate + placement so the store lands on home, ready to drill. */
+async function onboard(store: Store, persona: 'new' | 'knows-play' | 'counts' = 'new') {
+  await store.getState().submitName('Remelo');
+  await store.getState().submitPlacement(persona, null);
+}
+
+async function completeDrill(store: Store, perfect: boolean) {
   const state = store.getState();
   while (store.getState().drill !== null && store.getState().drill!.status === 'running') {
     const drill = store.getState().drill!;
@@ -25,33 +35,55 @@ async function completeDrill(store: ReturnType<typeof createAppStore>, perfect: 
   }
 }
 
-describe('ISC-63: cold start → drill with no auth step', () => {
-  test('first launch lands on onboarding; one action starts dealing; account prompt only at results', async () => {
+describe('name gate + placement entry flow', () => {
+  test('first launch lands on namegate; name → placement → home', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
-    expect(store.getState().screen).toBe('onboarding');
-    expect(store.getState().promptAccount).toBe(false);
+    expect(store.getState().screen).toBe('namegate');
+    expect(store.getState().profile).toBeNull();
 
-    expect(store.getState().startDrill('card-values')).toBe(true);
-    expect(store.getState().screen).toBe('drill');
+    expect(await store.getState().submitName('  ')).toBe(false); // empty rejected
+    expect(store.getState().screen).toBe('namegate');
 
-    await completeDrill(store, true);
-    expect(store.getState().screen).toBe('results');
-    expect(store.getState().promptAccount).toBe(true); // account AFTER first result
-    expect(store.getState().progress.hasSeenFirstResult).toBe(true);
+    expect(await store.getState().submitName('Remelo')).toBe(true);
+    expect(store.getState().profile!.name).toBe('Remelo');
+    expect(store.getState().screen).toBe('placement');
+
+    await store.getState().submitPlacement('new', null);
+    expect(store.getState().screen).toBe('home');
+    expect(store.getState().progress.placed).toBe(true);
   });
 
-  test('returning user (has seen first result) cold-starts on home, no account prompt', async () => {
+  test('the tester registry receives the name (founder roster)', async () => {
+    const registered: string[] = [];
+    const store = createAppStore(
+      makeDeps({ registry: { register: async (p) => void registered.push(p.name) } }),
+    );
+    await store.getState().init();
+    await store.getState().submitName('Dana');
+    expect(registered).toEqual(['Dana']);
+  });
+
+  test('returning tester (named + placed) cold-starts on home', async () => {
     const deps = makeDeps();
     const first = createAppStore(deps);
     await first.getState().init();
-    first.getState().startDrill('card-values');
-    await completeDrill(first, true);
+    await onboard(first);
 
     const second = createAppStore(deps); // same storage
     await second.getState().init();
     expect(second.getState().screen).toBe('home');
-    expect(second.getState().promptAccount).toBe(false);
+    expect(second.getState().profile!.name).toBe('Remelo');
+  });
+
+  test("placement 'counts' tests out two levels and opens speed", async () => {
+    const store = createAppStore(makeDeps());
+    await store.getState().init();
+    await store.getState().submitName('Sharp');
+    await store.getState().submitPlacement('counts', { correct: 8, total: 8, avgMsPerCard: 1100 });
+    expect(store.getState().progress.testedOut).toEqual(['card-values', 'running-count-slow']);
+    expect(store.getState().progress.casinoReady).toBe(55);
+    expect(store.getState().startDrill('running-count-speed')).toBe(true); // unlocked via tested-out
   });
 });
 
@@ -59,14 +91,16 @@ describe('ISC-48: locked levels rejected at the store boundary', () => {
   test('starting a locked level returns false and stays put', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
+    await onboard(store);
     expect(store.getState().startDrill('running-count-speed')).toBe(false);
-    expect(store.getState().screen).toBe('onboarding');
+    expect(store.getState().screen).toBe('home');
     expect(store.getState().drill).toBeNull();
   });
 
   test('passing the L1 gate unlocks L2', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
+    await onboard(store);
     store.getState().startDrill('card-values');
     await completeDrill(store, true); // 100% at 700ms/card → gate passed
     expect(store.getState().lastGateJustPassed).toBe(true);
@@ -76,6 +110,7 @@ describe('ISC-48: locked levels rejected at the store boundary', () => {
   test('failing accuracy does not pass the gate', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
+    await onboard(store);
     store.getState().startDrill('card-values');
     await completeDrill(store, false); // all wrong
     expect(store.getState().lastGateJustPassed).toBe(false);
@@ -83,24 +118,27 @@ describe('ISC-48: locked levels rejected at the store boundary', () => {
   });
 });
 
-describe('flow: one more round, home, persistence, sync queue', () => {
-  test('oneMoreRound restarts the same level; goHome clears the prompt', async () => {
+describe('flow: results, coach, one more round, persistence, sync', () => {
+  test('results carry a coach insight; oneMoreRound restarts the level; goHome', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
+    await onboard(store);
     store.getState().startDrill('card-values');
     await completeDrill(store, true);
+    expect(store.getState().screen).toBe('results');
+    expect(store.getState().lastInsight).not.toBeNull();
+    expect(store.getState().lastInsight!.headline.length).toBeGreaterThan(0);
     expect(store.getState().oneMoreRound()).toBe(true);
-    expect(store.getState().screen).toBe('drill');
     expect(store.getState().drill!.level.id).toBe('card-values');
     await completeDrill(store, true);
     store.getState().goHome();
     expect(store.getState().screen).toBe('home');
-    expect(store.getState().promptAccount).toBe(false);
   });
 
   test('oneMoreRound without a result is a no-op', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
+    await onboard(store);
     expect(store.getState().oneMoreRound()).toBe(false);
   });
 
@@ -108,36 +146,32 @@ describe('flow: one more round, home, persistence, sync queue', () => {
     const storage = new InMemoryStorage();
     const store = createAppStore(makeDeps({ storage }));
     await store.getState().init();
+    await onboard(store);
     store.getState().startDrill('card-values');
     await completeDrill(store, true);
-    await new Promise((r) => setTimeout(r, 0)); // finishDrill persists in its async tail
+    await new Promise((r) => setTimeout(r, 0));
     expect(await storage.getItem('count-trainer/progress/v1')).not.toBeNull();
     const queue = await storage.getItem('count-trainer/sync-queue/v1');
-    expect(queue).not.toBeNull();
     expect(JSON.parse(queue as string)).toHaveLength(1);
   });
 
   test('with a sync client the queue drains after the session', async () => {
     const pushed: unknown[] = [];
     const store = createAppStore(
-      makeDeps({
-        syncClient: {
-          pushScores: async (events) => {
-            pushed.push(...events);
-          },
-        },
-      }),
+      makeDeps({ syncClient: { pushScores: async (events) => void pushed.push(...events) } }),
     );
     await store.getState().init();
+    await onboard(store);
     store.getState().startDrill('card-values');
     await completeDrill(store, true);
-    await new Promise((r) => setTimeout(r, 0)); // let finishDrill's async tail run
+    await new Promise((r) => setTimeout(r, 0));
     expect(pushed).toHaveLength(1);
   });
 
   test('peekCount flows into the session result score', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
+    await onboard(store);
     store.getState().startDrill('card-values');
     store.getState().peekCount();
     await completeDrill(store, true);
@@ -148,6 +182,7 @@ describe('flow: one more round, home, persistence, sync queue', () => {
     let clock = 1_000_000;
     const store = createAppStore(makeDeps({ now: () => clock }));
     await store.getState().init();
+    await onboard(store);
     store.getState().startDrill('card-values');
     clock += 120_000;
     store.getState().tickClock();
@@ -158,14 +193,15 @@ describe('flow: one more round, home, persistence, sync queue', () => {
     let clock = 1_000_000;
     const store = createAppStore(makeDeps({ now: () => clock }));
     await store.getState().init();
+    await onboard(store);
     store.getState().startDrill('card-values');
     const drill = store.getState().drill!;
-    store.getState().answerCurrent(expectedAnswer(drill, 0)); // one perfect card
-    clock += 120_000; // clock expires before the rest are answered
+    store.getState().answerCurrent(expectedAnswer(drill, 0));
+    clock += 120_000;
     store.getState().tickClock();
     expect(store.getState().screen).toBe('results');
     expect(store.getState().lastGateJustPassed).toBe(false);
-    expect(store.getState().startDrill('running-count-slow')).toBe(false); // still locked
+    expect(store.getState().startDrill('running-count-slow')).toBe(false);
   });
 
   test('init recovers from a corrupted progress blob instead of bricking', async () => {
@@ -174,26 +210,53 @@ describe('flow: one more round, home, persistence, sync queue', () => {
     const store = createAppStore(makeDeps({ storage }));
     await store.getState().init();
     expect(store.getState().ready).toBe(true);
-    expect(store.getState().screen).toBe('onboarding');
+    expect(store.getState().screen).toBe('namegate'); // no profile yet → name gate
   });
 
   test('synced score event carries the peek count', async () => {
     const pushed: { peeks: number }[] = [];
     const store = createAppStore(
-      makeDeps({
-        syncClient: {
-          pushScores: async (events) => {
-            pushed.push(...(events as { peeks: number }[]));
-          },
-        },
-      }),
+      makeDeps({ syncClient: { pushScores: async (e) => void pushed.push(...(e as { peeks: number }[])) } }),
     );
     await store.getState().init();
+    await onboard(store);
     store.getState().startDrill('card-values');
     store.getState().peekCount();
     await completeDrill(store, true);
     await new Promise((r) => setTimeout(r, 0));
     expect(pushed[0]!.peeks).toBe(1);
+  });
+});
+
+describe('Developer Menu (mock entitlement + overrides)', () => {
+  test('toggles premium and persists it', async () => {
+    const store = createAppStore(makeDeps());
+    await store.getState().init();
+    expect(store.getState().entitlement.isPremium).toBe(false);
+    await store.getState().devSetPremium(true);
+    expect(store.getState().entitlement.isPremium).toBe(true);
+  });
+
+  test('forces Casino Ready (clamped 0–100) and sets streak', async () => {
+    const store = createAppStore(makeDeps());
+    await store.getState().init();
+    await onboard(store);
+    await store.getState().devSetCasinoReady(150);
+    expect(store.getState().progress.casinoReady).toBe(100);
+    await store.getState().devSetStreak(12);
+    expect(store.getState().progress.streak.count).toBe(12);
+  });
+
+  test('resets progress back to placement', async () => {
+    const store = createAppStore(makeDeps());
+    await store.getState().init();
+    await onboard(store);
+    store.getState().startDrill('card-values');
+    await completeDrill(store, true);
+    await store.getState().devResetProgress();
+    expect(store.getState().progress.totalSessions).toBe(0);
+    expect(store.getState().progress.placed).toBe(false);
+    expect(store.getState().screen).toBe('placement');
   });
 
   test('level defs sanity: store flow used the real L1', () => {

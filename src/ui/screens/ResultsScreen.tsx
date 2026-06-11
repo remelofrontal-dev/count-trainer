@@ -5,8 +5,8 @@ import { useApp } from '../appStore';
 /** Results (mockup screen 03): headline %, ledger, ONE dominant CTA. */
 export function ResultsScreen() {
   const result = useApp((s) => s.lastResult);
+  const insight = useApp((s) => s.lastInsight);
   const gateJustPassed = useApp((s) => s.lastGateJustPassed);
-  const promptAccount = useApp((s) => s.promptAccount);
   const oneMoreRound = useApp((s) => s.oneMoreRound);
   const goHome = useApp((s) => s.goHome);
   const casinoReady = useApp((s) => s.progress.casinoReady);
@@ -35,11 +35,11 @@ export function ResultsScreen() {
         <Row k="Session score" v={`${result.score}`} gold />
       </View>
 
-      {promptAccount && (
-        <View style={styles.account}>
-          <Text style={styles.accountText}>
-            Nice first round. Create a free account to keep your streak and score safe.
-          </Text>
+      {insight !== null && (
+        <View style={styles.coach}>
+          <Text style={styles.coachLabel}>⚡ COACH INSIGHT</Text>
+          <Text style={styles.coachHeadline}>{insight.headline}</Text>
+          <Text style={styles.coachDetail}>{insight.detail}</Text>
         </View>
       )}
 
@@ -108,15 +108,28 @@ const styles = StyleSheet.create({
   rowV: { color: theme.colors.text, fontSize: 13, fontWeight: '600' },
   gold: { color: theme.colors.accent },
   bad: { color: theme.colors.error },
-  account: {
+  coach: {
     backgroundColor: theme.colors.surface,
     borderColor: theme.colors.accent,
     borderWidth: 1,
     borderRadius: 16,
-    padding: 13,
+    padding: 14,
     marginTop: 12,
   },
-  accountText: { color: theme.colors.text, fontSize: 13 },
+  coachLabel: {
+    color: theme.colors.accent,
+    fontFamily: theme.typography.display,
+    fontSize: 11,
+    letterSpacing: 3,
+    fontWeight: '700',
+  },
+  coachHeadline: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 6,
+  },
+  coachDetail: { color: theme.colors.textSecondary, fontSize: 13, marginTop: 4, lineHeight: 18 },
   cta: {
     marginTop: 14,
     backgroundColor: theme.semantic.progress,
