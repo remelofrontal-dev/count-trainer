@@ -1,14 +1,14 @@
 ---
-task: "Count Trainer Phase 1 + shareable web v1 deployed"
+task: "Count Trainer tester slice: namegate, placement, coach, devmenu"
 slug: 20260610-193000_count-trainer-phase-1
 project: count-trainer
 effort: E3
 effort_source: classifier
 phase: complete
-progress: 78/79
+progress: 90/92
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
-updated: 2026-06-11T00:10:00-07:00
+updated: 2026-06-11T01:30:00-07:00
 live_url: https://remelofrontal-dev.github.io/count-trainer/
 ---
 
@@ -157,6 +157,21 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - [x] ISC-44: Anti: no package-lock.json or yarn.lock (bun-only repo)
 - [x] ISC-45: Anti: no .py files anywhere in the repo
 
+### Phase A2-lite — tester slice increment 1 (2026-06-11)
+- [x] ISC-80: Name gate is the first screen for a new tester; empty/whitespace names rejected; valid name persists and personalizes Home ("Hey {name}")
+- [x] ISC-81: TesterRegistry seam exists — local-only no-op by default, httpRegistry POSTs profile and swallows network failure (offline-first), unit-tested
+- [x] ISC-82: Placement asks 3 personas; 'new' starts at Card Values, 'knows-play'/'counts' run an inline Hi-Lo check before routing
+- [x] ISC-83: Placement Check decides unlock (self-report never unlocks gates); passing 'counts' tests out 2 levels, opens Speed, seeds Casino Ready 55
+- [x] ISC-84: Tested-out levels unlock the path but render distinctly ("Tested out ✓"), NOT "Mastered"; gates stay earned
+- [x] ISC-85: Coach Insight v1 returns ONE specific insight per result from session data (rank-class misses, speed decay, peek reliance, accuracy/speed) — every branch non-empty, unit-tested
+- [x] ISC-86: Results screen renders the brass Coach Insight card (replaces the account prompt)
+- [x] ISC-87: Mock entitlement (isPremium) behind a clean interface; Dev Menu (hidden 5-tap on Home title) toggles premium, unlocks all, sets Casino Ready/streak, resets
+- [x] ISC-88: Casino Ready never drops below the placement-seeded floor (a hook, not a punishment) — unit-tested
+- [x] ISC-89: Disclaimer reads "No real-money wagering" (brief §1; removes the Play-mode contradiction)
+- [x] ISC-90: Anti: no raw hex outside theme tokens across all new UI files; engine purity preserved
+- [ ] ISC-91: [DEFERRED — increment 2] Level 0 Blackjack Basics + Basic Strategy & True Count drills (needs drill-engine generalization + ENGINE_SOURCES.md two-source validation)
+- [ ] ISC-92: [DEFERRED — founder input] Remote tester-roster collector wired behind TesterRegistry (Formspree / Cloudflare Worker / Supabase) so names reach the founder, not just each device
+
 ## Test Strategy
 
 | isc | type | check | threshold | tool |
@@ -217,6 +232,10 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - 2026-06-11 (Forge review): verdict FAIL — runtime-proven CRITICAL: answering one card then letting the 120s cap fire passed a 95% mastery gate (accuracy computed over cards ANSWERED, not dealt). Plus 4 MAJOR (corrupt-blob startup brick, unguarded queue parse, unbounded queue, peeks dropped from sync). No conflict with empirical results — findings reproduced, so fixed directly rather than re-calling advisor. All 5 fixed + 8 regression tests added.
 - 2026-06-11 (web deploy): chose GitHub Pages over Cloudflare Pages (the documented default) — no CF auth present on this machine, but `gh` was authed as remelofrontal-dev with repo scope. Pages is fully autonomous given gh auth. Two Expo-on-Pages requirements handled: experiments.baseUrl="/count-trainer" (project pages serve under a subpath) and .nojekyll (Pages otherwise strips Expo's _expo/ underscore dir). Site is a single-route SPA (Zustand screen switch, no URL routing) so no deep-link 404 problem. Repo is PUBLIC (free-tier Pages requires it) — no secrets present. Migration path to Cloudflare stays open per [[default-client-stack]].
 - 2026-06-11 (web deploy): commit emails rewritten to GitHub noreply (263505833+remelofrontal-dev@users.noreply.github.com) via filter-branch — initial push was rejected by GitHub's email-privacy protection on the iCloud address.
+
+- 2026-06-11 (brief v2 + tester slice): founder dropped an expanded brief (BRIEF_2) restructuring into Track A (build-to-testable, no store/billing/push) and Track B (launch infra), and broadening positioning to beginner→counter (beginners = volume segment). What shipped earlier = "Phase A1". Founder chose a LEAN tester slice over full Phase A2. Built increment 1: name gate (founder-directed tester tracking — deliberate deviation from the brief's "no forms before cards"; revert for public launch), placement onboarding (3 personas + inline check), Coach Insight v1, mock entitlement + Dev Menu. Deferred to increment 2: Level 0 + Basic Strategy/True Count drills (need drill-engine generalization).
+- 2026-06-11 (tracking): static GitHub Pages can't receive POSTs, so the deployed app can't collect tester names server-side without a collector. Built TesterRegistry as a seam (local-only now); founder must pick a collector (Formspree/Worker/Supabase) for names to reach them. Flagged as ISC-92.
+- 2026-06-11 (verification): full new flow proven on the LIVE url via headless-Chrome CDP walk — name→placement→home("Hey {name}")→drill→results with a data-driven Coach Insight ("Ten-value cards trip you up — missed 7 of 7"). Local-serve note: the baseUrl="/count-trainer" build 404s its JS when served at localhost root (SPA fallback returns HTML → "Unexpected token '<'"); must serve under /count-trainer/ to test locally. Not an app bug.
 
 ## Changelog
 
