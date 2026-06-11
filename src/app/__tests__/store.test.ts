@@ -154,6 +154,48 @@ describe('flow: one more round, home, persistence, sync queue', () => {
     expect(store.getState().screen).toBe('results');
   });
 
+  test('ISC-70: answering one card then timing out does NOT pass the gate (Forge CRITICAL regression)', async () => {
+    let clock = 1_000_000;
+    const store = createAppStore(makeDeps({ now: () => clock }));
+    await store.getState().init();
+    store.getState().startDrill('card-values');
+    const drill = store.getState().drill!;
+    store.getState().answerCurrent(expectedAnswer(drill, 0)); // one perfect card
+    clock += 120_000; // clock expires before the rest are answered
+    store.getState().tickClock();
+    expect(store.getState().screen).toBe('results');
+    expect(store.getState().lastGateJustPassed).toBe(false);
+    expect(store.getState().startDrill('running-count-slow')).toBe(false); // still locked
+  });
+
+  test('init recovers from a corrupted progress blob instead of bricking', async () => {
+    const storage = new InMemoryStorage();
+    await storage.setItem('count-trainer/progress/v1', '{corrupt not json');
+    const store = createAppStore(makeDeps({ storage }));
+    await store.getState().init();
+    expect(store.getState().ready).toBe(true);
+    expect(store.getState().screen).toBe('onboarding');
+  });
+
+  test('synced score event carries the peek count', async () => {
+    const pushed: { peeks: number }[] = [];
+    const store = createAppStore(
+      makeDeps({
+        syncClient: {
+          pushScores: async (events) => {
+            pushed.push(...(events as { peeks: number }[]));
+          },
+        },
+      }),
+    );
+    await store.getState().init();
+    store.getState().startDrill('card-values');
+    store.getState().peekCount();
+    await completeDrill(store, true);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(pushed[0]!.peeks).toBe(1);
+  });
+
   test('level defs sanity: store flow used the real L1', () => {
     expect(levelById('card-values').cardsPerSession).toBe(20);
   });

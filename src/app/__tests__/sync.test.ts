@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { InMemoryStorage } from '../storage';
 import {
+  MAX_QUEUE,
   type ScoreEvent,
   type SyncClient,
   drainQueue,
@@ -15,6 +16,7 @@ function event(score: number): ScoreEvent {
     score,
     accuracy: 0.95,
     avgMsPerCard: 1300,
+    peeks: 0,
     completedAtIso: '2026-06-10T19:30:00.000Z',
   };
 }
@@ -68,5 +70,29 @@ describe('ISC-67: offline-first sync', () => {
     };
     expect(await drainQueue(storage, failing)).toBe(0);
     expect(await pendingScores(storage)).toHaveLength(1);
+  });
+
+  test('Forge MAJOR: a corrupt queue blob never throws and never wedges sync', async () => {
+    const storage = new InMemoryStorage();
+    await storage.setItem('count-trainer/sync-queue/v1', '[{bad json');
+    expect(await pendingScores(storage)).toEqual([]);
+    // enqueue over a poisoned key recovers to a fresh single-event queue
+    await enqueueScore(storage, event(80));
+    expect(await pendingScores(storage)).toHaveLength(1);
+    // drain with a corrupt key + client present must not throw
+    const client: SyncClient = { pushScores: async () => {} };
+    await storage.setItem('count-trainer/sync-queue/v1', 'not even json');
+    expect(await drainQueue(storage, client)).toBe(0);
+  });
+
+  test('Forge MAJOR: queue is capped at MAX_QUEUE, dropping oldest', async () => {
+    const storage = new InMemoryStorage();
+    for (let i = 0; i < MAX_QUEUE + 25; i++) {
+      await enqueueScore(storage, event(i));
+    }
+    const queue = await pendingScores(storage);
+    expect(queue).toHaveLength(MAX_QUEUE);
+    expect(queue[0]!.score).toBe(25); // first 25 dropped
+    expect(queue[queue.length - 1]!.score).toBe(MAX_QUEUE + 24);
   });
 });

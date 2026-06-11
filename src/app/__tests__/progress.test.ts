@@ -30,11 +30,23 @@ describe('ISC-55: serialization round-trip', () => {
     expect(deserialize(serialize(next))).toEqual(next);
   });
 
-  test('unsupported version throws; missing levels get defaults', () => {
-    expect(() => deserialize('{"version":2}')).toThrow('version');
+  test('unsupported version / corrupt payloads throw; missing levels get defaults', () => {
+    expect(() => deserialize('{"version":2}')).toThrow('corrupt');
+    expect(() => deserialize('null')).toThrow('corrupt'); // null no longer TypeErrors (Forge MAJOR)
+    expect(() => deserialize('[]')).toThrow('corrupt');
+    expect(() => deserialize('5')).toThrow('corrupt');
+    expect(() => deserialize('{not json')).toThrow(); // malformed JSON still throws (caller catches)
     const sparse = { ...emptyProgress(), levels: {} };
     const revived = deserialize(JSON.stringify(sparse));
     expect(revived.levels['card-values']).toBeDefined();
+  });
+
+  test('Forge MAJOR: loadProgress never throws on a corrupt blob — falls back to empty', async () => {
+    const storage = new InMemoryStorage();
+    await storage.setItem('count-trainer/progress/v1', '{truncated');
+    expect(await loadProgress(storage)).toEqual(emptyProgress());
+    await storage.setItem('count-trainer/progress/v1', 'null');
+    expect(await loadProgress(storage)).toEqual(emptyProgress());
   });
 });
 

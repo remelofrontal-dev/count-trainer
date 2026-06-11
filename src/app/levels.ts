@@ -64,13 +64,25 @@ export interface GateResult {
   passed: boolean;
   accuracyOk: boolean;
   speedOk: boolean;
+  completionOk: boolean;
 }
 
-/** Mastery gate: BOTH accuracy and speed must clear (brief §4.1: "95% accuracy at 1.5s/card"). */
-export function evaluateGate(level: LevelDef, accuracy: number, avgMsPerCard: number): GateResult {
+/**
+ * Mastery gate: accuracy AND speed AND completion must all clear.
+ * The completion axis exists because accuracy is computed over cards
+ * ANSWERED — without it, one correct card + the 120s timeout would pass a
+ * "95% at 1.5s/card" gate (Forge CRITICAL finding, 2026-06-10).
+ */
+export function evaluateGate(
+  level: LevelDef,
+  accuracy: number,
+  avgMsPerCard: number,
+  cardsAnswered: number,
+): GateResult {
   const accuracyOk = accuracy >= level.gate.minAccuracy;
   const speedOk = avgMsPerCard <= level.gate.maxAvgMsPerCard;
-  return { passed: accuracyOk && speedOk, accuracyOk, speedOk };
+  const completionOk = cardsAnswered >= level.cardsPerSession;
+  return { passed: accuracyOk && speedOk && completionOk, accuracyOk, speedOk, completionOk };
 }
 
 /**

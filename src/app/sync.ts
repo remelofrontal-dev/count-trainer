@@ -8,12 +8,16 @@
 import type { KVStorage } from './storage';
 
 const QUEUE_KEY = 'count-trainer/sync-queue/v1';
+/** Cap local queue growth when no sync client ever appears (Forge MAJOR finding). */
+export const MAX_QUEUE = 500;
 
 export interface ScoreEvent {
   levelId: string;
   score: number;
   accuracy: number;
   avgMsPerCard: number;
+  /** Peek count — honesty signal; the server needs it to recompute/validate scores. */
+  peeks: number;
   completedAtIso: string;
 }
 
@@ -38,21 +42,30 @@ export function supabaseConfigFromEnv(
   return { url, anonKey };
 }
 
-export async function enqueueScore(storage: KVStorage, event: ScoreEvent): Promise<void> {
-  const raw = await storage.getItem(QUEUE_KEY);
-  const queue: ScoreEvent[] = raw === null ? [] : (JSON.parse(raw) as ScoreEvent[]);
-  queue.push(event);
-  await storage.setItem(QUEUE_KEY, JSON.stringify(queue));
-}
-
+/** Read the queue, tolerating a corrupted blob (returns [] rather than throwing). */
 export async function pendingScores(storage: KVStorage): Promise<ScoreEvent[]> {
   const raw = await storage.getItem(QUEUE_KEY);
-  return raw === null ? [] : (JSON.parse(raw) as ScoreEvent[]);
+  if (raw === null) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as ScoreEvent[]) : [];
+  } catch {
+    return []; // poisoned queue must never wedge sync or block finishDrill
+  }
+}
+
+export async function enqueueScore(storage: KVStorage, event: ScoreEvent): Promise<void> {
+  const queue = await pendingScores(storage);
+  queue.push(event);
+  // Drop oldest beyond the cap — unbounded growth when no client ever appears.
+  const capped = queue.length > MAX_QUEUE ? queue.slice(queue.length - MAX_QUEUE) : queue;
+  await storage.setItem(QUEUE_KEY, JSON.stringify(capped));
 }
 
 /**
  * Drain the queue through the client. Queue is cleared ONLY after a successful
- * push; on failure the queue is left intact for the next attempt. Never throws.
+ * push; on failure the queue is left intact for the next attempt. Never throws —
+ * pendingScores tolerates corruption and the push is guarded.
  */
 export async function drainQueue(storage: KVStorage, client: SyncClient | null): Promise<number> {
   if (client === null) {

@@ -77,14 +77,24 @@ export function createAppStore(deps: AppDeps) {
     ready: false,
 
     async init() {
-      const progress = await loadProgress(deps.storage);
+      // Best-effort: a corrupt local store or a failed drain must never block startup.
+      let progress = emptyProgress();
+      try {
+        progress = await loadProgress(deps.storage);
+      } catch {
+        progress = emptyProgress();
+      }
       set({
         progress,
         ready: true,
         // Returning users skip onboarding — dealing within 60s applies to first launch.
         screen: progress.hasSeenFirstResult ? 'home' : 'onboarding',
       });
-      await drainQueue(deps.storage, deps.syncClient);
+      try {
+        await drainQueue(deps.storage, deps.syncClient);
+      } catch {
+        /* offline-first: sync is never load-bearing for startup */
+      }
     },
 
     startDrill(levelId: string): boolean {
@@ -127,7 +137,7 @@ export function createAppStore(deps: AppDeps) {
       const { drill, progress } = get();
       if (drill === null) return;
       const result = sessionResult(drill);
-      const gate = evaluateGate(drill.level, result.accuracy, result.avgMsPerCard);
+      const gate = evaluateGate(drill.level, result.accuracy, result.avgMsPerCard, result.cardsAnswered);
       const { next, gateJustPassed } = recordSession(progress, result, gate.passed, deps.today());
       const withFirstResult: ProgressState = { ...next, hasSeenFirstResult: true };
       set({
@@ -144,6 +154,7 @@ export function createAppStore(deps: AppDeps) {
         score: result.score,
         accuracy: result.accuracy,
         avgMsPerCard: result.avgMsPerCard,
+        peeks: result.peeks,
         completedAtIso: new Date(deps.now()).toISOString(),
       });
       await drainQueue(deps.storage, deps.syncClient);

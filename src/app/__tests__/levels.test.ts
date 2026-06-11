@@ -14,26 +14,37 @@ describe('ISC-46: level definitions', () => {
   });
 });
 
-describe('ISC-47: gate evaluation — both axes must clear', () => {
+describe('ISC-47: gate evaluation — all three axes must clear', () => {
   const speed = levelById('running-count-speed'); // 95% @ 1500ms — the brief's example gate
+  const full = speed.cardsPerSession;
 
-  test('passes exactly at the boundaries', () => {
-    expect(evaluateGate(speed, 0.95, 1500).passed).toBe(true);
-    expect(evaluateGate(speed, 1, 100).passed).toBe(true);
+  test('passes exactly at the boundaries (with the full deck answered)', () => {
+    expect(evaluateGate(speed, 0.95, 1500, full).passed).toBe(true);
+    expect(evaluateGate(speed, 1, 100, full).passed).toBe(true);
   });
 
   test('accuracy below 95% fails even when fast', () => {
-    const r = evaluateGate(speed, 0.949, 800);
+    const r = evaluateGate(speed, 0.949, 800, full);
     expect(r.passed).toBe(false);
     expect(r.accuracyOk).toBe(false);
     expect(r.speedOk).toBe(true);
   });
 
   test('speed above threshold fails even at 100% accuracy', () => {
-    const r = evaluateGate(speed, 1, 1501);
+    const r = evaluateGate(speed, 1, 1501, full);
     expect(r.passed).toBe(false);
     expect(r.accuracyOk).toBe(true);
     expect(r.speedOk).toBe(false);
+  });
+
+  test('ISC-70: incomplete session fails the gate even at perfect accuracy + speed (timeout bypass closed)', () => {
+    const r = evaluateGate(speed, 1, 400, 1); // one card, then the clock expired
+    expect(r.passed).toBe(false);
+    expect(r.completionOk).toBe(false);
+    expect(r.accuracyOk).toBe(true);
+    expect(r.speedOk).toBe(true);
+    // answering one short of the full deck still fails
+    expect(evaluateGate(speed, 1, 400, full - 1).passed).toBe(false);
   });
 });
 

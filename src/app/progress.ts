@@ -98,18 +98,28 @@ export function serialize(progress: ProgressState): string {
 }
 
 export function deserialize(raw: string): ProgressState {
-  const parsed = JSON.parse(raw) as ProgressState;
-  if (parsed.version !== 1) {
-    throw new Error(`Unsupported progress version: ${String(parsed.version)}`);
+  const parsed = JSON.parse(raw) as unknown; // throws on malformed JSON — caller handles
+  if (typeof parsed !== 'object' || parsed === null || (parsed as { version?: unknown }).version !== 1) {
+    throw new Error('Unsupported or corrupt progress payload');
   }
   // Merge over empty state so newly added levels get defaults.
   const base = emptyProgress();
-  return { ...base, ...parsed, levels: { ...base.levels, ...parsed.levels } };
+  const state = parsed as ProgressState;
+  return { ...base, ...state, levels: { ...base.levels, ...state.levels } };
 }
 
+/**
+ * Never throws: a corrupted local blob must not brick app startup
+ * (offline-first — this key IS the app state). Corrupt → fresh start.
+ */
 export async function loadProgress(storage: KVStorage): Promise<ProgressState> {
   const raw = await storage.getItem(STORAGE_KEY);
-  return raw === null ? emptyProgress() : deserialize(raw);
+  if (raw === null) return emptyProgress();
+  try {
+    return deserialize(raw);
+  } catch {
+    return emptyProgress();
+  }
 }
 
 export async function saveProgress(storage: KVStorage, progress: ProgressState): Promise<void> {
