@@ -5,10 +5,10 @@ project: count-trainer
 effort: E3
 effort_source: classifier
 phase: build
-progress: 113/115
+progress: 118/120
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
-updated: 2026-06-11T13:00:00-07:00
+updated: 2026-06-11T13:45:00-07:00
 live_url: https://remelofrontal-dev.github.io/count-trainer/
 ---
 
@@ -179,6 +179,13 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - [x] ISC-113: GATES_ADVISORY flag — gates measure+signal but never block in beta; flip restores blocking (lock UI kept, dev-toggleable)
 - [x] ISC-114: Readiness signals (Mastered/Tested-out/Recommended next/Ready ✓/"Not ready N% there"); all levels tappable; verified live
 - [x] ISC-115: Soft pre-entry note once per unready level (Jump in / Take me to prereq); skipAheads tracks the beta experiment
+
+### Phase A2.2 — level-aware coach + jargon (2026-06-11)
+- [x] ISC-116: Level-aware coach bar (coachVisibility) — Book always; Running Count/True Count only after reaching them; verified live (fresh=Book-only, unlocked=RC+TC)
+- [x] ISC-117: Progressive jargon utility (full→short on teaching-level mastery or ~10 exposures); exposures tracked per Play round; no bare RC/TC/Book literals (audited)
+- [x] ISC-118: Tap-to-explain bottom sheet (coach + record) + labeled CHIPS + Coach-OFF peek eye
+- [x] ISC-119: Play first-entry Table Briefing (level-aware), re-openable via "?"; advances ISC-108 for Play
+- [x] ISC-120: BETA READINESS — emailed founder via Formspree that the app is ready for a 10-person feedback beta (2026-06-11)
 
 ### Anti-criteria
 - [x] ISC-42: Anti: "stripe" appears nowhere in package.json or source
