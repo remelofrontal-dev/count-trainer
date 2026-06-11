@@ -92,10 +92,12 @@ describe('play store flow', () => {
     expect(store.getState().screen).toBe('home');
   });
 
-  test('mode navigation switches screens: home → modes → play → home', () => {
+  test('mode navigation switches screens: home → modes → info → play → home', () => {
     const store = createAppStore(makeDeps());
     store.getState().goModes();
     expect(store.getState().screen).toBe('modes');
+    store.getState().goInfo();
+    expect(store.getState().screen).toBe('info');
     store.getState().enterPlay();
     expect(store.getState().screen).toBe('play');
     store.getState().goHome();

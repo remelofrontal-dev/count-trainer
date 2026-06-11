@@ -16,9 +16,9 @@ import { theme } from '../../theme';
 import { useApp } from '../appStore';
 
 /**
- * Play mode (brief §4.6.2) — the full blackjack table on felt. Built on the pure
- * table engine. Coach ON overlays the basic-strategy hint + live count. Multi-seat
- * is premium (PRO tag during beta). All controls live in the bottom thumb zone.
+ * Play mode (brief §4.6.2) — a real blackjack table layout: dealer on a separate
+ * level up top, player seats in a horizontal row below (like a live table when a
+ * single hand is in play). Coach ON shows the live count + book play.
  */
 export function PlayScreen() {
   const play = useApp((s) => s.play);
@@ -38,10 +38,10 @@ export function PlayScreen() {
   const runningCount = liveRunningCount(playCount, play);
   const trueCount = play !== null ? liveTrueCount(runningCount, play.shoe.decksRemaining) : 0;
   const playerSeat = play?.seats.find((s) => s.isPlayer) ?? null;
+  const multiSeat = (play?.seats.length ?? 1) > 1;
 
   return (
     <View style={styles.container}>
-      {/* Header — record + chips (display only) */}
       <View style={styles.header}>
         <Pressable accessibilityRole="button" onPress={exitPlay}>
           <Text style={styles.back}>‹ Path</Text>
@@ -55,41 +55,50 @@ export function PlayScreen() {
         </Text>
       </View>
 
-      {/* Felt — dealer + seats */}
-      <ScrollView style={styles.felt} contentContainerStyle={styles.feltContent}>
-        <Text style={styles.zoneLabel}>DEALER</Text>
-        <CardRow cards={play ? dealerCards(play) : []} />
+      {/* Felt: dealer up top on its own level, players in a row below */}
+      <View style={styles.felt}>
+        <View style={styles.dealerArea}>
+          <Text style={styles.zoneLabel}>DEALER</Text>
+          <CardRow cards={play ? dealerCards(play) : []} size="md" />
+        </View>
 
-        {play?.seats.map((seat, i) => (
-          <View key={i} style={styles.seatBlock}>
-            <Text style={styles.zoneLabel}>
-              {seat.isPlayer ? 'YOU' : `SEAT ${i + 1}`}
-              {!seat.isPlayer && showProTag(config.numAISeats > 0 ? 'premium' : 'free', entitlement) && (
-                <Text style={styles.pro}>  PRO</Text>
-              )}
-            </Text>
-            {seat.hands.map((hand, h) => (
-              <HandView key={h} hand={hand} active={inRound && seat.isPlayer && seat.activeHand === h} />
-            ))}
-          </View>
-        ))}
+        <View style={styles.tableLine} />
 
-        {coach && play !== null && (
-          <View style={styles.coach}>
-            <Text style={styles.coachLabel}>COACH</Text>
-            <Text style={styles.coachLine}>
-              Count: RC {runningCount >= 0 ? '+' : ''}
-              {runningCount} · TC {trueCount >= 0 ? '+' : ''}
-              {trueCount.toFixed(1)}
-            </Text>
-            {inRound && playerSeat !== null && (
-              <Text style={styles.coachHint}>Book play: {hint(play, playerSeat)}</Text>
-            )}
-          </View>
-        )}
-      </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.seatsRow, !multiSeat && styles.seatsRowSingle]}
+        >
+          {play === null ? (
+            <Text style={styles.empty}>Tap deal to start</Text>
+          ) : (
+            play.seats.map((seat, i) => (
+              <Seat
+                key={i}
+                seat={seat}
+                index={i}
+                inRound={inRound}
+                showPro={!seat.isPlayer && showProTag('premium', entitlement) && multiSeat}
+                compact={multiSeat}
+              />
+            ))
+          )}
+        </ScrollView>
+      </View>
 
-      {/* Controls — bottom thumb zone */}
+      {/* Coach strip */}
+      {coach && play !== null && (
+        <View style={styles.coach}>
+          <Text style={styles.coachText}>
+            RC {runningCount >= 0 ? '+' : ''}
+            {runningCount} · TC {trueCount >= 0 ? '+' : ''}
+            {trueCount.toFixed(1)}
+            {inRound && playerSeat !== null ? ` · Book: ${hint(play, playerSeat)}` : ''}
+          </Text>
+        </View>
+      )}
+
+      {/* Controls */}
       <View style={styles.controls}>
         {!inRound ? (
           <Pressable accessibilityRole="button" style={styles.deal} onPress={dealRound}>
@@ -97,13 +106,8 @@ export function PlayScreen() {
           </Pressable>
         ) : (
           <View style={styles.actionRow}>
-            {availableActions(play!).map((a) => (
-              <Pressable
-                key={a}
-                accessibilityRole="button"
-                style={styles.action}
-                onPress={() => playAct(a)}
-              >
+            {availableActions(play).map((a) => (
+              <Pressable key={a} accessibilityRole="button" style={styles.action} onPress={() => playAct(a)}>
                 <Text style={styles.actionText}>{ACTION_LABEL[a]}</Text>
               </Pressable>
             ))}
@@ -113,16 +117,14 @@ export function PlayScreen() {
         <View style={styles.configRow}>
           <Toggle label={`Coach ${coach ? 'ON' : 'OFF'}`} on={coach} onPress={togglePlayCoach} />
           <Toggle
-            label={`${config.numAISeats === 0 ? 'Heads-up' : `${config.numAISeats} seats`}`}
+            label={config.numAISeats === 0 ? 'Heads-up' : `${config.numAISeats} seats`}
             on={config.numAISeats > 0}
             onPress={() => setPlayConfig({ numAISeats: config.numAISeats >= 4 ? 0 : config.numAISeats + 2 })}
           />
           <Toggle
             label={config.blackjackPayout}
             on={config.blackjackPayout === '3:2'}
-            onPress={() =>
-              setPlayConfig({ blackjackPayout: config.blackjackPayout === '3:2' ? '6:5' : '3:2' })
-            }
+            onPress={() => setPlayConfig({ blackjackPayout: config.blackjackPayout === '3:2' ? '6:5' : '3:2' })}
           />
         </View>
         {effectivePremium(entitlement) && config.numAISeats > 0 && (
@@ -133,15 +135,9 @@ export function PlayScreen() {
   );
 }
 
-const ACTION_LABEL: Record<PlayerAction, string> = {
-  hit: 'HIT',
-  stand: 'STAND',
-  double: 'DOUBLE',
-  split: 'SPLIT',
-};
+const ACTION_LABEL: Record<PlayerAction, string> = { hit: 'HIT', stand: 'STAND', double: 'DOUBLE', split: 'SPLIT' };
 
 function dealerCards(play: TableState): Card[] {
-  // hide the hole until revealed
   return play.holeRevealed ? play.dealer : [play.dealer[0] as Card];
 }
 
@@ -155,35 +151,68 @@ function hint(play: TableState, seat: Seat): string {
   return { H: 'Hit', S: 'Stand', D: 'Double', P: 'Split', R: 'Surrender' }[a];
 }
 
-function CardRow({ cards }: { cards: Card[] }) {
+function Seat({
+  seat,
+  index,
+  inRound,
+  showPro,
+  compact,
+}: {
+  seat: Seat;
+  index: number;
+  inRound: boolean;
+  showPro: boolean;
+  compact: boolean;
+}) {
+  return (
+    <View style={styles.seat}>
+      {seat.hands.map((hand, h) => (
+        <HandView
+          key={h}
+          hand={hand}
+          active={inRound && seat.isPlayer && seat.activeHand === h}
+          size={compact ? 'sm' : 'md'}
+        />
+      ))}
+      <Text style={[styles.seatLabel, seat.isPlayer && styles.seatLabelYou]}>
+        {seat.isPlayer ? 'YOU' : `SEAT ${index + 1}`}
+        {showPro ? '  PRO' : ''}
+      </Text>
+    </View>
+  );
+}
+
+function HandView({ hand, active, size }: { hand: Hand; active: boolean; size: 'sm' | 'md' }) {
+  const v = handValue(hand.cards);
+  return (
+    <View style={[styles.hand, active && styles.handActive]}>
+      <CardRow cards={hand.cards} size={size} />
+      <Text style={styles.handTotal}>
+        {v.isSoft ? 'soft ' : ''}
+        {v.total}
+        {hand.outcome !== null && <Text style={outcomeStyle(hand.outcome)}>  {hand.outcome.toUpperCase()}</Text>}
+      </Text>
+    </View>
+  );
+}
+
+function CardRow({ cards, size }: { cards: Card[]; size: 'sm' | 'md' }) {
   return (
     <View style={styles.cardRow}>
       {cards.length === 0 ? (
         <Text style={styles.empty}>—</Text>
       ) : (
         cards.map((card, i) => (
-          <View key={i} style={styles.card}>
-            <Text style={[styles.cardText, isRed(card.suit) && styles.cardRed]}>
+          <View key={i} style={size === 'sm' ? styles.cardSm : styles.cardMd}>
+            <Text
+              style={[size === 'sm' ? styles.cardSmText : styles.cardMdText, isRed(card.suit) && styles.cardRed]}
+            >
               {card.rank}
               {card.suit}
             </Text>
           </View>
         ))
       )}
-    </View>
-  );
-}
-
-function HandView({ hand, active }: { hand: Hand; active: boolean }) {
-  const v = handValue(hand.cards);
-  return (
-    <View style={[styles.hand, active && styles.handActive]}>
-      <CardRow cards={hand.cards} />
-      <Text style={styles.handTotal}>
-        {v.isSoft ? 'soft ' : ''}
-        {v.total}
-        {hand.outcome !== null && <Text style={outcomeStyle(hand.outcome)}>  {hand.outcome.toUpperCase()}</Text>}
-      </Text>
     </View>
   );
 }
@@ -220,20 +249,41 @@ const styles = StyleSheet.create({
   chips: { fontFamily: theme.typography.display, fontSize: 16, fontWeight: '700' },
   chipsUp: { color: theme.semantic.win },
   chipsDown: { color: theme.colors.error },
-  felt: { flex: 1, marginHorizontal: 12, borderRadius: 18, backgroundColor: theme.colors.surface },
-  feltContent: { padding: 16, alignItems: 'center' },
+  felt: {
+    flex: 1,
+    marginHorizontal: 12,
+    borderRadius: 18,
+    backgroundColor: theme.colors.surface,
+    paddingVertical: 18,
+    justifyContent: 'space-between',
+  },
+  dealerArea: { alignItems: 'center' },
+  tableLine: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginHorizontal: 28,
+    marginVertical: 8,
+  },
   zoneLabel: {
     color: theme.colors.textSecondary,
     fontFamily: theme.typography.display,
     fontSize: 11,
     letterSpacing: 3,
-    marginTop: 10,
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  pro: { color: theme.colors.accent, fontSize: 9 },
-  seatBlock: { alignItems: 'center', width: '100%' },
-  cardRow: { flexDirection: 'row', gap: 6, justifyContent: 'center', minHeight: 56 },
-  card: {
+  seatsRow: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 12, gap: 16 },
+  seatsRowSingle: { flex: 1, justifyContent: 'center' },
+  seat: { alignItems: 'center', gap: 4 },
+  seatLabel: {
+    color: theme.colors.textSecondary,
+    fontFamily: theme.typography.display,
+    fontSize: 10,
+    letterSpacing: 2,
+    marginTop: 2,
+  },
+  seatLabelYou: { color: theme.semantic.progress },
+  cardRow: { flexDirection: 'row', gap: 4, justifyContent: 'center' },
+  cardMd: {
     backgroundColor: theme.colors.card,
     borderRadius: 8,
     paddingHorizontal: 10,
@@ -241,34 +291,37 @@ const styles = StyleSheet.create({
     minWidth: 40,
     alignItems: 'center',
   },
-  cardText: { color: theme.colors.background, fontFamily: theme.typography.display, fontSize: 20, fontWeight: '800' },
+  cardMdText: { color: theme.colors.background, fontFamily: theme.typography.display, fontSize: 20, fontWeight: '800' },
+  cardSm: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 7,
+    minWidth: 28,
+    alignItems: 'center',
+  },
+  cardSmText: { color: theme.colors.background, fontFamily: theme.typography.display, fontSize: 14, fontWeight: '800' },
   cardRed: { color: theme.colors.error },
-  empty: { color: theme.colors.textSecondary, fontSize: 24 },
-  hand: { alignItems: 'center', padding: 6, borderRadius: 10, marginVertical: 2 },
+  empty: { color: theme.colors.textSecondary, fontSize: 18 },
+  hand: { alignItems: 'center', padding: 4, borderRadius: 10 },
   handActive: { borderColor: theme.semantic.progress, borderWidth: 1 },
-  handTotal: { color: theme.colors.text, fontSize: 13, marginTop: 4 },
+  handTotal: { color: theme.colors.text, fontSize: 12, marginTop: 3 },
   win: { color: theme.semantic.win, fontWeight: '700' },
   lose: { color: theme.colors.error, fontWeight: '700' },
   push: { color: theme.colors.accent, fontWeight: '700' },
   coach: {
-    backgroundColor: theme.colors.background,
+    marginHorizontal: 12,
+    marginTop: 8,
+    backgroundColor: theme.colors.surface,
     borderColor: theme.colors.accent,
     borderWidth: 1,
     borderRadius: 12,
-    padding: 10,
-    marginTop: 14,
-    width: '100%',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
-  coachLabel: { color: theme.colors.accent, fontSize: 10, letterSpacing: 3, fontWeight: '700' },
-  coachLine: { color: theme.colors.text, fontSize: 14, marginTop: 4, fontWeight: '600' },
-  coachHint: { color: theme.colors.textSecondary, fontSize: 13, marginTop: 2 },
-  controls: { padding: 16, paddingBottom: 28 },
-  deal: {
-    backgroundColor: theme.semantic.progress,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
+  coachText: { color: theme.colors.text, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  controls: { padding: 16, paddingBottom: 24 },
+  deal: { backgroundColor: theme.semantic.progress, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   dealText: {
     color: theme.colors.background,
     fontFamily: theme.typography.display,
@@ -279,7 +332,7 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: 8 },
   action: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
     borderColor: theme.colors.border,
     borderWidth: 1,
     borderRadius: 14,

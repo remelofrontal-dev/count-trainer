@@ -6,6 +6,7 @@ import type { Screen } from '../app/store';
 import { NavBar } from './NavBar';
 import { DrillScreen } from './screens/DrillScreen';
 import { HomeScreen } from './screens/HomeScreen';
+import { InfoScreen } from './screens/InfoScreen';
 import { ModesScreen } from './screens/ModesScreen';
 import { NameGateScreen } from './screens/NameGateScreen';
 import { PlacementScreen } from './screens/PlacementScreen';
@@ -26,7 +27,7 @@ export function AppRoot() {
   }
 
   // Bottom nav appears on the hub screens; focused flows stay clean.
-  const showNav = screen === 'home' || screen === 'modes';
+  const showNav = screen === 'home' || screen === 'modes' || screen === 'info';
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -46,6 +47,8 @@ function renderScreen(screen: Screen) {
       return <HomeScreen />;
     case 'modes':
       return <ModesScreen />;
+    case 'info':
+      return <InfoScreen />;
     case 'drill':
       return <DrillScreen />;
     case 'results':

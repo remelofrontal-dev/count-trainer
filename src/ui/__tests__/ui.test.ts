@@ -75,6 +75,7 @@ describe('ISC-58/64: screens exist and the root registers them', () => {
       'ResultsScreen.tsx',
       'PlayScreen.tsx',
       'ModesScreen.tsx',
+      'InfoScreen.tsx',
     ]) {
       expect(files).toContain(name);
     }
@@ -82,14 +83,14 @@ describe('ISC-58/64: screens exist and the root registers them', () => {
 
   test('AppRoot switches across all screens', () => {
     const source = readFileSync(join(UI_DIR, 'AppRoot.tsx'), 'utf8');
-    for (const screen of ['namegate', 'placement', 'home', 'modes', 'drill', 'results', 'play']) {
+    for (const screen of ['namegate', 'placement', 'home', 'modes', 'info', 'drill', 'results', 'play']) {
       expect(source.includes(`case '${screen}'`)).toBe(true);
     }
   });
 
-  test('the bottom NavBar exists and offers Path / Modes / Play', () => {
+  test('the bottom NavBar exists and offers Path / Modes / Play / Info', () => {
     const source = readFileSync(join(UI_DIR, 'NavBar.tsx'), 'utf8');
-    for (const label of ['Path', 'Modes', 'Play']) {
+    for (const label of ['Path', 'Modes', 'Play', 'Info']) {
       expect(source.includes(label)).toBe(true);
     }
   });

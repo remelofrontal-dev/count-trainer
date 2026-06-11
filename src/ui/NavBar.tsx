@@ -10,6 +10,7 @@ import type { Screen } from '../app/store';
 export function NavBar({ active }: { active: Screen }) {
   const goHome = useApp((s) => s.goHome);
   const goModes = useApp((s) => s.goModes);
+  const goInfo = useApp((s) => s.goInfo);
   const enterPlay = useApp((s) => s.enterPlay);
 
   return (
@@ -17,6 +18,7 @@ export function NavBar({ active }: { active: Screen }) {
       <Tab glyph="♦" label="Path" on={active === 'home'} onPress={goHome} />
       <Tab glyph="◆" label="Modes" on={active === 'modes'} onPress={goModes} />
       <Tab glyph="♠" label="Play" on={active === 'play'} onPress={enterPlay} />
+      <Tab glyph="ℹ" label="Info" on={active === 'info'} onPress={goInfo} />
     </View>
   );
 }
