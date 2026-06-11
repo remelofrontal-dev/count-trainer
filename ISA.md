@@ -5,10 +5,10 @@ project: count-trainer
 effort: E3
 effort_source: classifier
 phase: build
-progress: 95/110
+progress: 102/110
 mode: interactive
 started: 2026-06-10T15:00:00-07:00
-updated: 2026-06-11T02:30:00-07:00
+updated: 2026-06-11T03:15:00-07:00
 live_url: https://remelofrontal-dev.github.io/count-trainer/
 ---
 
@@ -167,7 +167,7 @@ A git-initialized Expo+TypeScript repo at `count-trainer/` containing the §4.2 
 - [ ] ISC-103: Drill engine generalized to action (strategy) + number (true-count) question types
 - [ ] ISC-104: Level 0 Blackjack Basics — show-then-do micro-lessons (beginner on-ramp)
 - [ ] ISC-105: Levels 4–9 (Basic Strategy free → True Count → Deck Est → Deviations → Bet Spreads → Full Table)
-- [ ] ISC-106: Play mode UI (table render, actions, Coach ON/OFF, deal-speed, seat config, W/L/P + count-quiz header)
+- [x] ISC-106: Play mode UI — felt table (dealer+seats), Hit/Stand/Double/Split, Coach ON/OFF overlay (live RC+TC+book play), seat config (heads-up↔multi, PRO-tagged), 3:2↔6:5 toggle, W/L/P+chips header, count carries across rounds. Verified live via CDP (deal→coach RC−1→act→settle, 0 errors). [deal-speed selector + count-quiz fold into ISC-108]
 - [ ] ISC-107: Table Rules presets + Table Quality A–F grade + "why counters walk past 6:5" lesson
 - [ ] ISC-108: Table Briefings (30s/mode, "?" re-open); Quick Drill mode; global count-quiz mechanic
 - [ ] ISC-109: Trust layer — "Our Math" screen, score-meaning + Bet Spreads expectations cards, mandatory "Know the Law" card
