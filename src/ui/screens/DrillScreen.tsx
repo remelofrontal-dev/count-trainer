@@ -9,6 +9,7 @@ import {
   runningCountSoFar,
 } from '../../app/drill';
 import { isPair } from '../../engine/hand';
+import { cardValueHint } from '../../engine/cardName';
 import type { Card } from '../../engine/types';
 import { theme } from '../../theme';
 import { useApp } from '../appStore';
@@ -66,6 +67,10 @@ export function DrillScreen() {
 
       <View style={[styles.felt, flash === 'good' && styles.feltGood, flash === 'bad' && styles.feltBad]}>
         {q?.card !== undefined && <BigCard card={q.card} />}
+        {/* Beginner bridge: blackjack value helper, Card Values level only (not above) */}
+        {q?.card !== undefined && drill.level.id === 'card-values' && (
+          <Text style={styles.valueHint}>{cardValueHint(q.card)}</Text>
+        )}
 
         {mode === 'strategy' && q?.hand !== undefined && q.dealerUp !== undefined && (
           <View style={styles.strategyFelt}>
@@ -215,6 +220,7 @@ const styles = StyleSheet.create({
   card: { width: 96, height: 136, borderRadius: 11, backgroundColor: theme.colors.card, alignItems: 'center', justifyContent: 'center' },
   cardCorner: { fontFamily: theme.typography.display, fontSize: 30, fontWeight: '800', textAlign: 'center', color: theme.colors.background },
   cardRed: { color: theme.colors.error },
+  valueHint: { color: theme.colors.textSecondary, fontSize: 12, letterSpacing: 1, marginTop: 10 },
   strategyFelt: { alignItems: 'center', gap: 6 },
   vsLabel: { color: theme.colors.textSecondary, fontSize: 10, letterSpacing: 3, marginTop: 6 },
   handRow: { flexDirection: 'row', gap: 8 },

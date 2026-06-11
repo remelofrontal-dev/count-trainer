@@ -29,7 +29,7 @@ export const LESSONS: readonly LessonStep[] = [
   },
   {
     title: 'Card values',
-    teach: 'Number cards are worth their number. J, Q and K are all worth 10. An Ace is 1 or 11 — whichever helps you.',
+    teach: 'Number cards are worth their number. Jacks, Queens and Kings are all worth 10. An Ace is 1 or 11 — whichever helps you.',
     practice: {
       prompt: 'What is a King worth?',
       options: [
@@ -78,7 +78,7 @@ export const LESSONS: readonly LessonStep[] = [
     title: 'Blackjack!',
     teach: 'An Ace plus any ten-value card as your first two cards is a “blackjack” — the best hand. It pays 3:2 (a $10 bet wins $15).',
     practice: {
-      prompt: 'Your first two cards are A and K. Is that a blackjack?',
+      prompt: 'Your first two cards are an Ace and a King. Is that a blackjack?',
       options: [
         { label: 'Yes', correct: true },
         { label: 'No', correct: false },

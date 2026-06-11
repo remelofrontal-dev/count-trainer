@@ -18,7 +18,7 @@ export const INFO_CARDS: readonly InfoCard[] = [
     glyph: '♠',
     title: 'How to play blackjack',
     body: [
-      'Goal: beat the dealer’s hand without going over 21. Number cards count their face value, face cards (J/Q/K) are 10, and an ace is 1 or 11 — whichever helps.',
+      'Goal: beat the dealer’s hand without going over 21. Number cards count their face value, the face cards (Jacks, Queens, and Kings) are 10, and an Ace is 1 or 11 — whichever helps.',
       'You’re dealt two cards. Hit to take another, Stand to keep what you have, Double to take exactly one more card for double the bet, or Split a pair into two hands.',
       'The dealer must hit until reaching 17, then stands. Go over 21 and you bust (instant loss). A two-card 21 is blackjack and pays 3:2.',
     ],
