@@ -90,33 +90,42 @@ describe('name gate + placement entry flow', () => {
   });
 });
 
-describe('ISC-48: locked levels rejected at the store boundary', () => {
-  test('starting a locked level returns false and stays put', async () => {
+describe('ISC-114: advisory gates — guide, don\'t block', () => {
+  test('advisory (default): a not-ready level IS startable, and counts as a skip-ahead', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
     await onboard(store);
-    expect(store.getState().startDrill('running-count-speed')).toBe(false);
-    expect(store.getState().screen).toBe('home');
-    expect(store.getState().drill).toBeNull();
+    expect(store.getState().startDrill('running-count-speed')).toBe(true); // never blocked
+    expect(store.getState().screen).toBe('drill');
+    expect(store.getState().progress.skipAheads).toBe(1); // tracked for the beta experiment
   });
 
-  test('passing the L1 gate unlocks L2', async () => {
+  test('blocking mode (dev override): a locked level is rejected again', async () => {
+    const store = createAppStore(makeDeps());
+    await store.getState().init();
+    await onboard(store);
+    store.getState().devSetBlockingGates(true);
+    expect(store.getState().startDrill('running-count-speed')).toBe(false);
+    expect(store.getState().screen).toBe('home');
+  });
+
+  test('passing the L1 gate unlocks L2 (recommended next)', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
     await onboard(store);
     store.getState().startDrill('card-values');
     await completeDrill(store, true); // 100% at 700ms/card → gate passed
     expect(store.getState().lastGateJustPassed).toBe(true);
-    expect(store.getState().startDrill('running-count-slow')).toBe(true);
   });
 
-  test('failing accuracy does not pass the gate', async () => {
+  test('failing accuracy does not pass the gate (still locked under blocking)', async () => {
     const store = createAppStore(makeDeps());
     await store.getState().init();
     await onboard(store);
     store.getState().startDrill('card-values');
     await completeDrill(store, false); // all wrong
     expect(store.getState().lastGateJustPassed).toBe(false);
+    store.getState().devSetBlockingGates(true);
     expect(store.getState().startDrill('running-count-slow')).toBe(false);
   });
 });
@@ -203,7 +212,9 @@ describe('flow: results, coach, one more round, persistence, sync', () => {
     clock += 120_000;
     store.getState().tickClock();
     expect(store.getState().screen).toBe('results');
-    expect(store.getState().lastGateJustPassed).toBe(false);
+    expect(store.getState().lastGateJustPassed).toBe(false); // gate not passed — the core assertion
+    // and under blocking gates it would still be locked
+    store.getState().devSetBlockingGates(true);
     expect(store.getState().startDrill('running-count-slow')).toBe(false);
   });
 

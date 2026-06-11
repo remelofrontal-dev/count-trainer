@@ -120,3 +120,32 @@ export function isLevelUnlocked(levelId: string, gatesPassed: ReadonlySet<string
   const level = levelById(levelId);
   return LEVELS.filter((l) => l.order < level.order).every((l) => gatesPassed.has(l.id));
 }
+
+/**
+ * ADVISORY GATES (handoff §3b). Beta: gates measure + signal readiness but never
+ * block — every level stays tappable. Flip to false to restore blocking gates with
+ * no other code changes (the lock UI is kept behind this flag, not deleted).
+ */
+export const GATES_ADVISORY = true;
+
+/** The immediately-preceding level by order, or undefined for the first. */
+export function prereqLevel(levelId: string): LevelDef | undefined {
+  const level = levelById(levelId);
+  const prior = LEVELS.filter((l) => l.order < level.order);
+  return prior[prior.length - 1];
+}
+
+/**
+ * 0–100 progress toward a level's gate, blending accuracy and speed against its
+ * thresholds. Drives the "Not ready yet — 71% there" readiness signal.
+ */
+export function gateProgressPct(
+  levelId: string,
+  bestAccuracy: number,
+  bestAvgMsPerCard: number | null,
+): number {
+  const { gate } = levelById(levelId);
+  const accFrac = Math.min(1, bestAccuracy / gate.minAccuracy);
+  const speedFrac = bestAvgMsPerCard === null ? 0 : Math.min(1, gate.maxAvgMsPerCard / bestAvgMsPerCard);
+  return Math.round(((accFrac + speedFrac) / 2) * 100);
+}

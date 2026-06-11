@@ -23,7 +23,7 @@ import {
   normalizeName,
   saveProfile,
 } from './identity';
-import { LEVELS, evaluateGate, isLevelUnlocked, levelById } from './levels';
+import { GATES_ADVISORY, LEVELS, evaluateGate, isLevelUnlocked, levelById } from './levels';
 
 const LEVEL_IDS = LEVELS.map((l) => l.id);
 import { type Persona, evaluatePlacement } from './placement';
@@ -33,6 +33,7 @@ import {
   clearedLevels,
   emptyProgress,
   loadProgress,
+  markNoteShown,
   recordSession,
   saveProgress,
 } from './progress';
@@ -101,6 +102,8 @@ export interface AppState {
   lastInsight: Insight | null;
   lastGateJustPassed: boolean;
   ready: boolean;
+  /** Dev override: force blocking gates to test the locked experience (advisory off). */
+  devBlockingGates: boolean;
 
   // Play mode (full blackjack table)
   playConfig: TableConfig;
@@ -125,6 +128,7 @@ export interface AppState {
   submitName(name: string): Promise<boolean>;
   submitPlacement(persona: Persona, check: CheckStats | null): Promise<void>;
   startDrill(levelId: string): boolean;
+  markAdvisoryNote(levelId: string): Promise<void>;
   answerCurrent(value: number | string): void;
   peekCount(): void;
   tickClock(): void;
@@ -139,6 +143,7 @@ export interface AppState {
   devSetCasinoReady(n: number): Promise<void>;
   devSetStreak(n: number): Promise<void>;
   devUnlockAll(): Promise<void>;
+  devSetBlockingGates(on: boolean): void;
 }
 
 /** First screen for a given load state: name → placement → home. */
@@ -159,6 +164,7 @@ export function createAppStore(deps: AppDeps) {
     lastInsight: null,
     lastGateJustPassed: false,
     ready: false,
+    devBlockingGates: false,
 
     playConfig: DEFAULT_TABLE,
     play: null,
@@ -211,16 +217,29 @@ export function createAppStore(deps: AppDeps) {
     startDrill(levelId: string): boolean {
       const { progress, entitlement } = get();
       const level = levelById(levelId);
-      if (!isLevelUnlocked(levelId, clearedLevels(progress))) {
-        return false; // gates, not menus — locked levels cannot start
-      }
+      const advisory = GATES_ADVISORY && !get().devBlockingGates;
+      const ready = isLevelUnlocked(levelId, clearedLevels(progress));
+      // Blocking mode (advisory off): gates lock. Advisory mode: never blocks.
+      if (!advisory && !ready) return false;
       // Premium boundary — written at every gate; resolves open while BETA_ALL_ACCESS.
-      if (!hasAccess(level.tier, entitlement)) {
-        return false;
-      }
+      if (!hasAccess(level.tier, entitlement)) return false;
+
       const drill = createDrill(level, deps.nextSeed(), deps.now());
-      set({ drill, screen: 'drill', lastGateJustPassed: false });
+      // Beta experiment: count entries into a level the user isn't ready for yet.
+      if (advisory && !ready) {
+        const next: ProgressState = { ...progress, skipAheads: progress.skipAheads + 1 };
+        set({ progress: next, drill, screen: 'drill', lastGateJustPassed: false });
+        void saveProgress(deps.storage, next);
+      } else {
+        set({ drill, screen: 'drill', lastGateJustPassed: false });
+      }
       return true;
+    },
+
+    async markAdvisoryNote(levelId: string) {
+      const next = markNoteShown(get().progress, levelId);
+      set({ progress: next });
+      await saveProgress(deps.storage, next);
     },
 
     answerCurrent(value: number | string) {
@@ -402,6 +421,10 @@ export function createAppStore(deps: AppDeps) {
       const next: ProgressState = { ...get().progress, placed: true, testedOut };
       await saveProgress(deps.storage, next);
       set({ progress: next });
+    },
+
+    devSetBlockingGates(on: boolean) {
+      set({ devBlockingGates: on });
     },
   }));
 }

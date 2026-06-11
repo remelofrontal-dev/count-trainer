@@ -10,6 +10,8 @@ import { useApp } from './appStore';
  */
 export function DevMenu({ onClose }: { onClose: () => void }) {
   const ent = useApp((s) => s.entitlement);
+  const blockingGates = useApp((s) => s.devBlockingGates);
+  const devSetBlockingGates = useApp((s) => s.devSetBlockingGates);
   const devSetPremium = useApp((s) => s.devSetPremium);
   const devForceFree = useApp((s) => s.devForceFree);
   const devUnlockAll = useApp((s) => s.devUnlockAll);
@@ -32,6 +34,11 @@ export function DevMenu({ onClose }: { onClose: () => void }) {
           label={`Force FREE tier: ${ent.devForceFree ? 'ON' : 'OFF'}`}
           action={ent.devForceFree ? 'Unforce' : 'Force'}
           onPress={() => void devForceFree(!ent.devForceFree)}
+        />
+        <Row
+          label={`Gates: ${blockingGates ? 'BLOCKING' : 'advisory'}`}
+          action={blockingGates ? 'Advisory' : 'Block'}
+          onPress={() => devSetBlockingGates(!blockingGates)}
         />
         <Row label="Unlock all levels" action="Unlock" onPress={() => void devUnlockAll()} />
         <Row label="Casino Ready → 88" action="Set" onPress={() => void devSetCasinoReady(88)} />

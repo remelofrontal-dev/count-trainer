@@ -3,7 +3,7 @@
  * Casino Ready (profile-level) = best session composite across the last 10 sessions.
  */
 
-import { LEVELS } from './levels';
+import { LEVELS, gateProgressPct, isLevelUnlocked, prereqLevel } from './levels';
 import { EMPTY_STREAK, type StreakState, recordCompletion } from './streak';
 import type { SessionResult } from './drill';
 import type { KVStorage } from './storage';
@@ -35,6 +35,10 @@ export interface ProgressState {
   seededFloor: number;
   /** Level 0 Blackjack Basics lessons completed. */
   basicsComplete: boolean;
+  /** Advisory gates: level ids whose soft pre-entry note has already been shown. */
+  advisoryNotesShown: string[];
+  /** Beta experiment: count of drills started on a not-yet-ready level. */
+  skipAheads: number;
 }
 
 export function emptyProgress(): ProgressState {
@@ -59,6 +63,8 @@ export function emptyProgress(): ProgressState {
     placed: false,
     seededFloor: 0,
     basicsComplete: false,
+    advisoryNotesShown: [],
+    skipAheads: 0,
   };
 }
 
@@ -79,6 +85,42 @@ export function clearedLevels(progress: ProgressState): Set<string> {
   const set = gatesPassed(progress);
   for (const id of progress.testedOut) set.add(id);
   return set;
+}
+
+/** Advisory-gate readiness signal for a level node. */
+export type LevelSignal = 'mastered' | 'tested-out' | 'recommended' | 'ready' | 'not-ready';
+
+/** The first un-cleared, ready level by order — the "Recommended next". */
+export function recommendedLevelId(progress: ProgressState): string | null {
+  const cleared = clearedLevels(progress);
+  const mastered = gatesPassed(progress);
+  for (const l of LEVELS) {
+    if (!mastered.has(l.id) && !progress.testedOut.includes(l.id) && isLevelUnlocked(l.id, cleared)) {
+      return l.id;
+    }
+  }
+  return null;
+}
+
+export function levelSignal(levelId: string, progress: ProgressState): LevelSignal {
+  if (gatesPassed(progress).has(levelId)) return 'mastered';
+  if (progress.testedOut.includes(levelId)) return 'tested-out';
+  if (!isLevelUnlocked(levelId, clearedLevels(progress))) return 'not-ready';
+  return recommendedLevelId(progress) === levelId ? 'recommended' : 'ready';
+}
+
+/** "% there" toward being ready — progress on the prerequisite level's gate. */
+export function notReadyPct(levelId: string, progress: ProgressState): number {
+  const prereq = prereqLevel(levelId);
+  if (prereq === undefined) return 0;
+  const lp = progress.levels[prereq.id];
+  return gateProgressPct(prereq.id, lp?.bestAccuracy ?? 0, lp?.bestAvgMsPerCard ?? null);
+}
+
+/** Mark the soft pre-entry note as shown for a level (fires once, ever). */
+export function markNoteShown(progress: ProgressState, levelId: string): ProgressState {
+  if (progress.advisoryNotesShown.includes(levelId)) return progress;
+  return { ...progress, advisoryNotesShown: [...progress.advisoryNotesShown, levelId] };
 }
 
 /** Apply a Placement Check outcome: record tested-out levels + seed Casino Ready. */
