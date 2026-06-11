@@ -31,10 +31,15 @@ export function DrillScreen() {
   const tickClock = useApp((s) => s.tickClock);
   const [flash, setFlash] = useState<'none' | 'good' | 'bad'>('none');
   const [peeked, setPeeked] = useState(false);
+  const [, forceRender] = useState(0); // local tick so the timer animates each interval
   const hints = zoneHints();
 
   useEffect(() => {
-    const id = setInterval(tickClock, 250);
+    // Drive the cap AND a re-render every 250ms so the countdown moves in real time.
+    const id = setInterval(() => {
+      tickClock();
+      forceRender((n) => n + 1);
+    }, 250);
     return () => clearInterval(id);
   }, [tickClock]);
 

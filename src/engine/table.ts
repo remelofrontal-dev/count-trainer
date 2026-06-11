@@ -177,13 +177,18 @@ function handIsDone(hand: Hand): boolean {
   return hand.resolved || handValue(hand.cards).total >= 21;
 }
 
-/** Apply the human's action to the active hand, then auto-run to the next decision. */
+/**
+ * Apply the human's action to the active hand, then auto-run to the next decision.
+ * Returns a FRESH top-level object so React/Zustand re-render on every action — the
+ * engine mutates nested structures in place, so without a new reference the UI
+ * would only repaint when some other field changed (cards "popping in" at the end).
+ */
 export function act(state: TableState, action: PlayerAction): TableState {
   if (state.phase !== 'player') return state;
   const seat = state.seats[state.activeSeat];
   if (seat === undefined || !seat.isPlayer) return state;
   const next = applyAction(state, action);
-  return advance(next);
+  return { ...advance(next) };
 }
 
 function applyAction(state: TableState, action: PlayerAction): TableState {
