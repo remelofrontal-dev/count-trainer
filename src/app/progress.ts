@@ -39,6 +39,10 @@ export interface ProgressState {
   advisoryNotesShown: string[];
   /** Beta experiment: count of drills started on a not-yet-ready level. */
   skipAheads: number;
+  /** Progressive jargon: times each term has been shown (collapses full→short at ~10). */
+  jargonSeen: Record<string, number>;
+  /** Play-mode first-entry briefing has been shown. */
+  playBriefingSeen: boolean;
 }
 
 export function emptyProgress(): ProgressState {
@@ -65,6 +69,8 @@ export function emptyProgress(): ProgressState {
     basicsComplete: false,
     advisoryNotesShown: [],
     skipAheads: 0,
+    jargonSeen: {},
+    playBriefingSeen: false,
   };
 }
 

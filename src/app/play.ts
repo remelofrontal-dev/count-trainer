@@ -8,6 +8,29 @@
 
 import { tableRunningCount, type Outcome, type TableState } from '../engine/table';
 import { trueCount } from '../engine/counting';
+import { isLevelUnlocked } from './levels';
+import { clearedLevels, type ProgressState } from './progress';
+
+/**
+ * Level-aware coach content (fix): never show a stat from a concept the player
+ * hasn't reached. Strategy advice ("Book") is always available; the running count
+ * appears once they've reached the Running Count levels; the true count once
+ * they've reached True Count.
+ */
+export interface CoachVisibility {
+  book: boolean;
+  runningCount: boolean;
+  trueCount: boolean;
+}
+
+export function coachVisibility(progress: ProgressState): CoachVisibility {
+  const cleared = clearedLevels(progress);
+  return {
+    book: true,
+    runningCount: isLevelUnlocked('running-count-slow', cleared),
+    trueCount: isLevelUnlocked('true-count', cleared),
+  };
+}
 
 export interface PlayRecord {
   wins: number;

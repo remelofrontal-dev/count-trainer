@@ -37,7 +37,8 @@ import {
   recordSession,
   saveProgress,
 } from './progress';
-import { EMPTY_RECORD, type PlayRecord, foldRecord } from './play';
+import { EMPTY_RECORD, type PlayRecord, coachVisibility, foldRecord } from './play';
+import type { Term } from './jargon';
 import { EMPTY_STREAK, localDay } from './streak';
 import { type SyncClient, drainQueue, enqueueScore } from './sync';
 import type { KVStorage } from './storage';
@@ -125,6 +126,7 @@ export interface AppState {
   togglePlayCoach(): void;
   dealRound(): void;
   playAct(action: PlayerAction): void;
+  markPlayBriefingSeen(): Promise<void>;
   submitName(name: string): Promise<boolean>;
   submitPlacement(persona: Persona, check: CheckStats | null): Promise<void>;
   startDrill(levelId: string): boolean;
@@ -361,14 +363,27 @@ export function createAppStore(deps: AppDeps) {
         shoe = new Shoe(playConfig.decks, { seed: deps.nextSeed() });
         playCount = 0;
       }
-      let state = startRound(playConfig, shoe, PLAY_BET, deps.nextSeed());
+      const state = startRound(playConfig, shoe, PLAY_BET, deps.nextSeed());
       let record = get().playRecord;
       // If the round resolved immediately (dealer natural), fold it now.
       if (state.phase === 'settlement') {
         record = foldRecord(record, state);
         playCount += tableRunningCount(state);
       }
-      set({ play: state, playShoe: shoe, playCount, playRecord: record });
+      // Progressive jargon: count one exposure of each term shown this round.
+      const progress = get().progress;
+      const vis = coachVisibility(progress);
+      const shown: Term[] = ['record', 'chips'];
+      if (get().playCoach) {
+        shown.push('book');
+        if (vis.runningCount) shown.push('runningCount');
+        if (vis.trueCount) shown.push('trueCount');
+      }
+      const jargonSeen = { ...progress.jargonSeen };
+      for (const t of shown) jargonSeen[t] = (jargonSeen[t] ?? 0) + 1;
+      const nextProgress: ProgressState = { ...progress, jargonSeen };
+      set({ play: state, playShoe: shoe, playCount, playRecord: record, progress: nextProgress });
+      void saveProgress(deps.storage, nextProgress);
     },
 
     playAct(action: PlayerAction) {
@@ -381,6 +396,12 @@ export function createAppStore(deps: AppDeps) {
         playCount += tableRunningCount(next);
       }
       set({ play: next, playCount, playRecord });
+    },
+
+    async markPlayBriefingSeen() {
+      const next: ProgressState = { ...get().progress, playBriefingSeen: true };
+      set({ progress: next });
+      await saveProgress(deps.storage, next);
     },
 
     async devSetPremium(on: boolean) {

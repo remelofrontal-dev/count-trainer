@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   availableActions,
@@ -10,10 +11,13 @@ import {
 import type { Card } from '../../engine/types';
 import { handValue } from '../../engine/hand';
 import { basicStrategyAction, resolveAction } from '../../engine/basicStrategy';
-import { liveRunningCount, liveTrueCount, nextSeatConfig, seatLabel } from '../../app/play';
+import { coachVisibility, liveRunningCount, liveTrueCount, nextSeatConfig, seatLabel } from '../../app/play';
+import { type Term, jargonDefinition, jargonText } from '../../app/jargon';
+import type { ProgressState } from '../../app/progress';
 import { effectivePremium, showProTag } from '../../app/entitlement';
 import { theme } from '../../theme';
 import { useApp } from '../appStore';
+import { PlayBriefing } from '../PlayBriefing';
 
 /**
  * Play mode (brief §4.6.2) — a real blackjack table layout: dealer on a separate
@@ -32,6 +36,13 @@ export function PlayScreen() {
   const togglePlayCoach = useApp((s) => s.togglePlayCoach);
   const setPlayConfig = useApp((s) => s.setPlayConfig);
   const exitPlay = useApp((s) => s.exitPlay);
+  const progress = useApp((s) => s.progress);
+  const briefingSeen = useApp((s) => s.progress.playBriefingSeen);
+  const markPlayBriefingSeen = useApp((s) => s.markPlayBriefingSeen);
+
+  const [explainOpen, setExplainOpen] = useState(false);
+  const [briefingOpen, setBriefingOpen] = useState(!briefingSeen);
+  const [peeked, setPeeked] = useState(false);
 
   const inRound = play !== null && play.phase === 'player';
   const settled = play !== null && play.phase === 'settlement';
@@ -39,6 +50,15 @@ export function PlayScreen() {
   const trueCount = play !== null ? liveTrueCount(runningCount, play.shoe.decksRemaining) : 0;
   const playerSeat = play?.seats.find((s) => s.isPlayer) ?? null;
   const multiSeat = (play?.seats.length ?? 1) > 1;
+  const vis = coachVisibility(progress);
+
+  // Which terms are currently on screen — drives the tap-to-explain sheet.
+  const visibleTerms: Term[] = ['record', 'chips', 'push'];
+  if (coach) {
+    visibleTerms.push('book');
+    if (vis.runningCount) visibleTerms.push('runningCount');
+    if (vis.trueCount) visibleTerms.push('trueCount');
+  }
 
   return (
     <View style={styles.container}>
@@ -46,13 +66,19 @@ export function PlayScreen() {
         <Pressable accessibilityRole="button" onPress={exitPlay}>
           <Text style={styles.back}>‹ Path</Text>
         </Pressable>
-        <Text style={styles.record}>
-          {record.wins}W · {record.losses}L · {record.pushes}P
-        </Text>
-        <Text style={[styles.chips, record.chips >= 0 ? styles.chipsUp : styles.chipsDown]}>
-          {record.chips >= 0 ? '+' : ''}
-          {record.chips}
-        </Text>
+        <Pressable accessibilityRole="button" onPress={() => setExplainOpen(true)} style={styles.headerCenter}>
+          <Text style={styles.record}>
+            {record.wins}W · {record.losses}L · {record.pushes}P
+          </Text>
+          <Text style={styles.recordHint}>tap to explain ⓘ</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => setExplainOpen(true)}>
+          <Text style={styles.chipsLabel}>CHIPS</Text>
+          <Text style={[styles.chips, record.chips >= 0 ? styles.chipsUp : styles.chipsDown]}>
+            {record.chips >= 0 ? '+' : ''}
+            {record.chips}
+          </Text>
+        </Pressable>
       </View>
 
       {/* Felt: dealer up top on its own level, players in a row below */}
@@ -86,16 +112,24 @@ export function PlayScreen() {
         </ScrollView>
       </View>
 
-      {/* Coach strip */}
+      {/* Level-aware coach strip — only shows concepts the player has reached */}
       {coach && play !== null && (
-        <View style={styles.coach}>
+        <Pressable accessibilityRole="button" style={styles.coach} onPress={() => setExplainOpen(true)}>
           <Text style={styles.coachText}>
-            RC {runningCount >= 0 ? '+' : ''}
-            {runningCount} · TC {trueCount >= 0 ? '+' : ''}
-            {trueCount.toFixed(1)}
-            {inRound && playerSeat !== null ? ` · Book: ${hint(play, playerSeat)}` : ''}
+            {coachLine({ progress, vis, inRound, play, playerSeat, runningCount, trueCount })}
           </Text>
-        </View>
+          <Text style={styles.coachHint}>tap to explain ⓘ</Text>
+        </Pressable>
+      )}
+      {/* Coach OFF: count hidden (exam mode), with a peek eye */}
+      {!coach && play !== null && (vis.runningCount || vis.trueCount) && (
+        <Pressable accessibilityRole="button" style={styles.coachOff} onPress={() => setPeeked((p) => !p)}>
+          <Text style={styles.coachOffText}>
+            {peeked
+              ? coachLine({ progress, vis, inRound: false, play, playerSeat, runningCount, trueCount })
+              : '👁 count hidden — tap to peek'}
+          </Text>
+        </Pressable>
       )}
 
       {/* Controls */}
@@ -130,6 +164,64 @@ export function PlayScreen() {
         {effectivePremium(entitlement) && config.numAISeats > 0 && (
           <Text style={styles.betaNote}>Multi-seat is PRO — unlocked in beta</Text>
         )}
+        <Pressable accessibilityRole="button" onPress={() => setBriefingOpen(true)}>
+          <Text style={styles.howTo}>? How Play mode works</Text>
+        </Pressable>
+      </View>
+
+      {explainOpen && <ExplainSheet terms={visibleTerms} onClose={() => setExplainOpen(false)} />}
+      {briefingOpen && (
+        <PlayBriefing
+          progress={progress}
+          onClose={() => {
+            setBriefingOpen(false);
+            if (!briefingSeen) void markPlayBriefingSeen();
+          }}
+        />
+      )}
+    </View>
+  );
+}
+
+interface CoachLineArgs {
+  progress: ProgressState;
+  vis: ReturnType<typeof coachVisibility>;
+  inRound: boolean;
+  play: TableState | null;
+  playerSeat: Seat | null;
+  runningCount: number;
+  trueCount: number;
+}
+
+/** Build the level-aware coach line: Book (always when in a hand), then RC, then TC. */
+function coachLine(a: CoachLineArgs): string {
+  const parts: string[] = [];
+  if (a.inRound && a.play !== null && a.playerSeat !== null) {
+    parts.push(`${jargonText('book', a.progress)}: ${hint(a.play, a.playerSeat)}`);
+  }
+  if (a.vis.runningCount) {
+    parts.push(`${jargonText('runningCount', a.progress)} ${a.runningCount >= 0 ? '+' : ''}${a.runningCount}`);
+  }
+  if (a.vis.trueCount) {
+    parts.push(`${jargonText('trueCount', a.progress)} ${a.trueCount >= 0 ? '+' : ''}${a.trueCount.toFixed(1)}`);
+  }
+  return parts.length > 0 ? parts.join(' · ') : 'Deal to begin';
+}
+
+function ExplainSheet({ terms, onClose }: { terms: Term[]; onClose: () => void }) {
+  const unique = [...new Set(terms)];
+  return (
+    <View style={styles.sheetOverlay}>
+      <View style={styles.sheet}>
+        <Text style={styles.sheetTitle}>WHAT THESE MEAN</Text>
+        {unique.map((t) => (
+          <Text key={t} style={styles.sheetDef}>
+            {jargonDefinition(t)}
+          </Text>
+        ))}
+        <Pressable accessibilityRole="button" style={styles.sheetClose} onPress={onClose}>
+          <Text style={styles.sheetCloseText}>GOT IT</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -245,8 +337,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   back: { color: theme.colors.textSecondary, fontSize: 14 },
+  headerCenter: { alignItems: 'center' },
   record: { color: theme.colors.text, fontFamily: theme.typography.display, fontSize: 15, letterSpacing: 1 },
-  chips: { fontFamily: theme.typography.display, fontSize: 16, fontWeight: '700' },
+  recordHint: { color: theme.colors.textSecondary, fontSize: 8, letterSpacing: 1 },
+  chipsLabel: { color: theme.colors.textSecondary, fontSize: 8, letterSpacing: 2, textAlign: 'right' },
+  chips: { fontFamily: theme.typography.display, fontSize: 16, fontWeight: '700', textAlign: 'right' },
   chipsUp: { color: theme.semantic.win },
   chipsDown: { color: theme.colors.error },
   felt: {
@@ -320,6 +415,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   coachText: { color: theme.colors.text, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  coachHint: { color: theme.colors.textSecondary, fontSize: 8, letterSpacing: 1, textAlign: 'center', marginTop: 2 },
+  coachOff: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    borderColor: theme.colors.border,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  coachOffText: { color: theme.colors.textSecondary, fontSize: 12, textAlign: 'center' },
+  howTo: { color: theme.colors.textSecondary, fontSize: 11, textAlign: 'center', marginTop: 10, letterSpacing: 1 },
+  sheetOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.78)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: theme.colors.surface,
+    borderTopColor: theme.colors.accent,
+    borderTopWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 22,
+    paddingBottom: 34,
+  },
+  sheetTitle: { color: theme.colors.accent, fontFamily: theme.typography.display, fontSize: 13, letterSpacing: 3, marginBottom: 12 },
+  sheetDef: { color: theme.colors.text, fontSize: 14, lineHeight: 20, marginBottom: 12 },
+  sheetClose: { marginTop: 4, alignItems: 'center', paddingVertical: 12 },
+  sheetCloseText: { color: theme.semantic.progress, fontFamily: theme.typography.display, fontSize: 15, letterSpacing: 2 },
   controls: { padding: 16, paddingBottom: 24 },
   deal: { backgroundColor: theme.semantic.progress, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   dealText: {
