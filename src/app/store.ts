@@ -51,7 +51,7 @@ import {
   tableRunningCount,
 } from '../engine/table';
 
-export type Screen = 'namegate' | 'placement' | 'home' | 'drill' | 'results' | 'play';
+export type Screen = 'namegate' | 'placement' | 'home' | 'modes' | 'drill' | 'results' | 'play';
 
 export const PLAY_BET = 100;
 
@@ -103,6 +103,7 @@ export interface AppState {
   playCoach: boolean;
 
   init(): Promise<void>;
+  goModes(): void;
   enterPlay(): void;
   exitPlay(): void;
   setPlayConfig(partial: Partial<TableConfig>): void;
@@ -271,6 +272,10 @@ export function createAppStore(deps: AppDeps) {
 
     goHome() {
       set({ screen: 'home' });
+    },
+
+    goModes() {
+      set({ screen: 'modes' });
     },
 
     enterPlay() {

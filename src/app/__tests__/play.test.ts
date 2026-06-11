@@ -92,6 +92,16 @@ describe('play store flow', () => {
     expect(store.getState().screen).toBe('home');
   });
 
+  test('mode navigation switches screens: home → modes → play → home', () => {
+    const store = createAppStore(makeDeps());
+    store.getState().goModes();
+    expect(store.getState().screen).toBe('modes');
+    store.getState().enterPlay();
+    expect(store.getState().screen).toBe('play');
+    store.getState().goHome();
+    expect(store.getState().screen).toBe('home');
+  });
+
   test('6:5 table yields a smaller blackjack payout than 3:2 over the same dealt shoe', () => {
     // Deterministic: same seed, compare a natural-blackjack round's chips.
     const mk = (payout: '3:2' | '6:5') => {
